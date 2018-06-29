@@ -3,6 +3,7 @@
 
 #### 2018-06-28
 The plan for this tool is to help Onuralp's analysis with regards to simulating theoretical population datasets. Towards this end I will be developing simdigree. Simdigree will make use of another package, pydigree; however, I will extend the functionality and background of pydigree to the specific use case of Onuralp's work.
+**UPDATE** - pydigree no longer being used.
 
 simdigree will have one required argument, a matrix with n rows and m columns. Each of the n rows will delineate an individual simulated by Onuralp through SLiM. Each of the m columns will denote a different SNP and that individual's genotype for that SNP (0,1,2). 
 
@@ -15,3 +16,20 @@ I've created two ways to use simdigree:
     * PED file - contains information about familial relationships, and phenotype of individuals
 
 I spent the rest of the day reading through the documentation for `pydigree`. I am now thoroughly convinced that it makes no sense. I think the simplest way forward would be to make my own set of pedigree functions/classes to handle what I would like to do. I learned some cool things that Mr. Shicks implemented; however, I feel the code is too much of a black box for what I would like it to do. I will start formulating the requisite structure tomorrow.
+
+#### 2018-06-29
+I've created a couple functions that will be useful. Currently I'm working on the `generate` functionality. The current workflow is as follows:
+1. Read in SNP matrix. Generate `Person` objects for each row in the SNP matrix
+2. Read in the effect column vector. 
+3. Compute the phenotype of each individual by the matrix multiplication of SNP matrix vs effect column vector
+4. Use liability threshold to determine which individuals are classified as 'Affected'
+
+For the `generate` functionality:
+1. Pick two random founders from entire population OR use user specified founders
+2. Generate random number of children
+3. For each generation desired:
+    * Loop through current children in generation
+        * Marry the current child?
+            * Randomly generate some children
+
+To this end I've generated the current structure of the simdigree. Read the `README` for more info.
