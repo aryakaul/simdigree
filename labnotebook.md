@@ -33,3 +33,15 @@ For the `generate` functionality:
             * Randomly generate some children
 
 To this end I've generated the current structure of the simdigree. Read the `README` for more info.
+
+#### 2018-07-02
+The `generate` function is complete; however, I am in the process of developing a read in that takes in a VCF file, as opposed to, a effect vector and a genotype matrix. Additionally, I'll take in a tau coefficient, so that I may calculate the effect vector myself with s^tau. Currently on the #TODO block:
+
+1. Add vcf input functionality
+2. Add tau input functionality
+3. Add in novel mutation simulation
+4. Add in recombination events
+5. Sample mates wrt to prevalence of affected vs. healthy (i.e. not 50/50 but based on the size of each population)
+6. Calculate affected status after the fact using the founder population
+
+Once this is done, I'll begin working on the `pedigree` functionality of `simdigree`

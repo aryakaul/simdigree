@@ -1,0 +1,48 @@
+['indiv3', 'indiv1', 'indiv2']
+Founder1 will be Person: indiv3
+Genotype: [2, 2, 1, 2, 1]
+Parents: None
+Children: None
+Affected?: False
+
+Founder2 will be Person: indiv4
+Genotype: [1, 1, 0, 1, 0]
+Parents: None
+Children: None
+Affected?: True
+
+They will have 4 children
+Child #1 created
+Child #2 created
+Child #3 created
+Child #4 created
+affected
+Healthy mate: 
+indiv1
+Marriage between G1-FOUNDER-C1 and indiv1
+They will have 3 children
+Child #1 created
+Child #2 created
+Child #3 created
+healthy
+Healthy mate: 
+indiv2
+Marriage between G1-FOUNDER-C2 and indiv2
+They will have 4 children
+Child #1 created
+Child #2 created
+Child #3 created
+Child #4 created
+affected
+Random mate: 
+Person: RANDOM-indiv1
+Genotype: [1, 0, 0, 0, 1]
+Parents: None
+Children: None
+Affected?: unknown
+
+Marriage between G1-FOUNDER-C4 and RANDOM-indiv1
+They will have 3 children
+Child #1 created
+Child #2 created
+Child #3 created

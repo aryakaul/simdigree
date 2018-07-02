@@ -42,6 +42,9 @@ class Person:
     def set_parents(self, parent1id, parent2id):
         self.parents = (parent1id, parent2id)
 
+    def set_affected(self, affected):
+        self.affected = affected
+
     def add_children(self, childrenid):
         if self.get_children() == None:
             childlist = []
