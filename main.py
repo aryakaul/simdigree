@@ -3,7 +3,7 @@
 import argparse
 import sys
 import os
-from simdigree.io import determine_healthy_affected, write_pedigree
+from simdigree.io import parse_inputNames, read_vcf
 from simdigree.generate import *
 from simdigree.person import mating
 
@@ -20,8 +20,11 @@ def parser_args(args):
     parser_pedigree.add_argument('-p', '--ped', help="Path to the ped file to use", type=str, required=True)
     parser_pedigree.add_argument('-o', '--output', help="Path to the output folder to dump simdigree's output to", type=str, required=False, default="./simdigree_output")
 
+
+
     parser_generate = subparsers.add_parser('generate', help="Make a fake family history")
     parser_generate.add_argument('-i', '--inputvcf', help="Path to the vcf file being used", type=str, required=True)
+    parser_generate.add_argument('-T', '--noLoci', help="Number of loci being used", type=int, required=True)
     parser_generate.add_argument('-t', '--tau', help="Tau value to use to raise the S coeff", type=float, required=False, default=0.5)
     #TODO put actually right thing here ^
     parser_generate.add_argument('-l', '--liabilityThreshold', help="Float value representing the liability threshold percentage being used. Default is 0.01", type=float, required=False, default=0.01)
@@ -40,14 +43,17 @@ def main():
     if not os.path.exists(args.output):
         os.makedirs(args.output)
 
-    healthy, affected = determine_healthy_affected(args.snpMatrix, args.effectVec, args.liabilityThreshold)
-    healthy_shuffle = generate_shuffle(healthy)
-    affected_shuffle = generate_shuffle(affected)
-
+    founder_genotype_dosage_matrix, selection_coeff, allele_freqs, chrom_num, all_founders = read_vcf(args.inputvcf)
 
     if args.command == "generate":
-        generations = generate_pedigree(healthy, affected, healthy_shuffle, affected_shuffle, args.ancestor1, args.ancestor2, args.reproduction, args.generation, args.marriagerate)
-        write_pedigree(generations, os.path.join(args.output, "test-pedigree.ped"))
+        if args.ancestor1: founder1 = parse_inputNames(args.ancestor1)
+        else: founder1 = None
+        if args.ancestor2: founder2 = parse_inputNames(args.ancestor2)
+        else: founder2 = None
+
+        #recombination_founder_genotype_dosage_matrix = recombine(founder_genotype_dosage_matrix, chrom_num, num_loci, num_founders)
+        generations = generate_pedigree(founder1, founder2, founder_genotype_dosage_matrix, args.reproduction, args.generation, args.marriagerate, all_founders, chrom_num, args.noLoci, selection_coeff)
+    #    write_pedigree(generations, os.path.join(args.output, "test-pedigree.ped"))
     elif args.command=="pedigree":
         people = readin_matrix(args.input)
         pedigree_people = readin_ped(args.ped)

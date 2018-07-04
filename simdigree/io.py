@@ -7,13 +7,54 @@ try:
 except:
     from .person import Person
 import numpy as np
+import pandas as pd
 
-def readin_vcf(filein):
-    for lines in filein:
-        if lines.startswith("#"): continue
-        line = lines.rstrip().split()
-        info = line[8]
-        gt = line[10:]
+#modified from Onuralp's code
+def read_vcf(path):
+    """
+    Extract selective effects and allele frequencies of causal variants from VCF generated using SLiM. Note that the
+    header and non-causal variants (those outside the mutational target) were removed from the original VCF output.
+    """
+
+    #read in vcf file
+    df = pd.read_csv(path, sep='\s+', header=None, comment='#', keep_default_na=False, low_memory=False, engine='c', dtype='str')
+    no_samples = df.shape[1]-9
+
+    # extract selective effects `s` and allele counts `ac`, calculate allele frequencies `x`
+    sel_coeff = df[7].str.extract(r';S=(\S+);DOM', expand=False).values.astype(float)
+    allele_counts = df[7].str.extract(r';AC=(\S+);DP', expand=False).values.astype(int)
+    allele_freqs = allele_counts / (2 * no_samples)
+
+    # track locus id
+    chrom_num = df[0].values
+
+    # construct genotype matrix (one-hot encoding)
+    genotypes = df.loc[:, 9:(no_samples + 9)].T.values
+    dosage = {'0|0': 0, '0|1': 1, '1|0': 2, '1|1': 3}
+    geno_dosage = np.vectorize(dosage.get)(genotypes)
+
+    allpeople = {}
+    for i in range(len(geno_dosage)):
+        allpeople["i"+str(i)]=Person("founder-i"+str(i), i)
+
+    return geno_dosage, abs(sel_coeff), allele_freqs, chrom_num, allpeople
+
+def parse_inputNames(founder):
+    if founder.startswith("indiv"):
+        try:
+            return int(founder.split("v")[1])
+        except:
+            print("Illegal argument found for founder: %s\nSee help message" % founder)
+    elif founder.startswith("i"):
+        try:
+            return int(founder.split("i")[1])
+        except:
+            print("Illegal argument found for founder: %s\nSee help message" % founder)
+    else:
+        try:
+            return int(founder)
+        except:
+            print("Illegal argument found for founder: %s\nSee help message" % founder)
 
 def readin_snpmatrix(filein):
     allpeople = {}
@@ -24,7 +65,7 @@ def readin_snpmatrix(filein):
             line = lines.rstrip().split()
             genotype = line
             for i in range(len(genotype)): genotype[i] = int(genotype[i])
-            id = "indiv"+str(ctr)
+            id = "i"+str(ctr)
             person = Person(id, genotype)
             allpeople[person.get_name()] = person
             snp_matrix.append(genotype)

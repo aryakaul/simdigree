@@ -7,8 +7,9 @@ from numpy import random as npr
 try:
     from person import Person, mating
 except:
-    from .person import Person, mating
+    from .person import Person, mating, recombine, add_denovo_hms
 import random
+import numpy as np
 
 def generate_random_normal_INT(mean):
     return int(npr.normal(loc=mean))
@@ -32,88 +33,89 @@ def generate_healthy_or_affected():
     if die > 0.5: return "healthy"
     else: return "affected"
 
-def generate_mate(healthy, affected, healthy_shuffle, affected_shuffle, numSNPs, randoctr):
+def generate_mate(founders, numSNPs, randoctr):
     randomname = "RANDOM-indiv"
-    choice = generate_healthy_or_affected()
     mate = None
-    print(choice)
-    if choice == "healthy" or len(affected_shuffle)==0:
-        try:
-            mate = healthy_shuffle.pop(0)
-            print("Healthy mate: \n%s" % mate)
-            mate = healthy[mate]
-        except:
-            pass
-    elif choice == "affected" or len(healthy_shuffle)==0:
-        try:
-            mate = affected_shuffle.pop(0)
-            print("Affected mate: \n%s" % mate)
-            mate = affected[mate]
-        except:
-            pass
+    if len(founders) != 0:
+        mate = founders.pop(0)
     if mate is None:
         randommatename = randomname+str(randoctr)
         mate = generate_random_person(randommatename, numSNPs)
-        print("Random mate: \n%s" % mate)
+        #print("Random mate: \n%s" % mate)
         randoctr += 1
     return mate, randoctr
 
-
-def generate_pedigree(healthy, affected, healthy_shuffle, affected_shuffle, founder1, founder2, reproductionRate, generationNumber, marriageRate):
+def generate_pedigree(founder1Name, founder2Name, founder_genotype_phase_matrix, reproductionRate, generationNumber, marriageRate, all_founders, chrom_num, num_loci, sel_coeff):
     generationLists = []
-    print(healthy_shuffle)
+    founders_shuffled = generate_shuffle(all_founders)
+    num_founders = len(all_founders)
+    numSNPs = founder_genotype_phase_matrix.shape[1]
+
     #Either find the founders or randomly select them
     ## Ensure that we remove them from the shuffled populations
-    if founder1 is not None:
-        try:
-            founder1 = healthy["indiv"+str(founder1)]
-            healthy_shuffle.remove(founder1)
-        except:
-            founder1 = affected["indiv"+str(founder1)]
-            affected_shuffle.remove(founder1)
+    if founder1Name is not None:
+        founder1 = all_founders["i"+str(founder1Name)]
+        founders_shuffled.remove("i"+str(founder1Name))
     else:
-        founder1 = healthy_shuffle.pop(0)
-        founder1 = healthy[founder1]
-    if founder2 is not None:
-        try:
-            founder2 = healthy["indiv"+str(founder2)]
-            healthy_shuffle.remove(founder2)
-        except:
-            founder2 = affected["indiv"+str(founder2)]
-            affected_shuffle.remove(founder2)
+        founder1Name = founders_shuffled.pop(0)
+        founder1 = all_founders[founder1Name]
+
+    if founder2Name is not None:
+        founder2 = all_founders["i"+str(founder2Name)]
+        founders_shuffled.remove("i"+str(founder2Name))
     else:
-        founder2 = affected_shuffle.pop(0)
-        founder2 = affected[founder2]
+        founder2Name = founders_shuffled.pop(0)
+        founder2 = all_founders[founder2Name]
     print("Founder1 will be %s" % (founder1))
     print("Founder2 will be %s" % (founder2))
     generationLists.append(founder1)
     generationLists.append(founder2)
-    #determine first round of children, make it nonzero
+
+    #determine number in first round of children, make it nonzero
     noChildren = abs(generate_random_normal_INT(reproductionRate))+1
     print("They will have %s children" % noChildren)
-    generation = "G1-FOUNDER-C"
+
+    #print(num_founders)
+    #print(num_loci)
+    #print(chrom_num)
+
+    #recombine founder genotypes, no need to add de-novo since it's the FOUNDER and they already have them
+    recombine_founder_genotype_phase_matrix = recombine(founder_genotype_phase_matrix, chrom_num, num_loci, num_founders)
+
+
+    generation = "g1-i"
     currGen = []
+    gen_genotypes = []
     for i in range(noChildren):
-        childname = generation + str(i+1)
-        child = mating(childname, founder1, founder2)
-        print("Child #%s created" % (i+1))
+        childname = generation + str(i)
+        #no current gen genotype matrix hence the None
+        child, child_gen = mating(childname, founder1, founder2, recombine_founder_genotype_phase_matrix, None)
+        child.set_genotype(i)
+        print("Child #%s created" % (i))
         currGen.append(child)
         generationLists.append(child)
+        gen_genotypes.append(child_gen)
+    current_gen_phase_matrix = np.vstack(gen_genotypes)
 
-    numSNPs = len(founder1.get_genotype())
     randompersonctr = 1 #count of individuals completely randomly generated
     gen_cont = False #is this generation continuing? i.e. is the number of kids for the next gen nonzero?
 
     #loop through the next generations we need to generate
     for generations in range(2,generationNumber):
 
-        #loop through every person in the current generation
+        gen_genotypes = []
+        #generate partner and new genotype matrix of the CURRENT generation. Founder matrix stays the same
+        curr_postrecomb_matrix = recombine(current_gen_phase_matrix, chrom_num, num_loci, num_founders)
+        curr_postdenovo_matrix,sel_coeff,chrom_num= add_denovo_hms(curr_postrecomb_matrix, sel_coeff, chrom_num, num_loci)
+        #loop through every person in the current generation. Their index corresponds to the row of them in the 
         for eachperson in range(len(currGen)):
             newGen = []
 
             #will they marry? / do we need them to marry to continue gen?
             if generate_marriage_choice(marriageRate) or (gen_cont==False and eachperson==len(currGen)-1):
-                partner, randompersonctr = generate_mate(healthy, affected, healthy_shuffle, affected_shuffle, numSNPs, randompersonctr)
+                partner, randompersonctr = generate_mate(founders_shuffled, numSNPs, randompersonctr)
+                partner = all_founders[partner]
+
                 generationLists.append(partner)
 
                 # generate the partnership 
@@ -129,12 +131,18 @@ def generate_pedigree(healthy, affected, healthy_shuffle, affected_shuffle, foun
 
                 # create each child
                 for i in range(noChildren):
+                    print(partner)
+                    print(currGen[eachperson])
                     childname = "G" + str(generations) + "-"+partner.get_name()+","+currGen[eachperson].get_name()+"-C"+str(i+1)
-                    child = mating(childname, currGen[eachperson], partner)
+                    child, child_gen = mating(childname, currGen[eachperson], partner, recombine_founder_genotype_phase_matrix, curr_postdenovo_matrix)
+                    child.set_genotype(i)
                     print("Child #%s created" % (i+1))
                     newGen.append(child)
                     gen_cont = True
                     generationLists.append(child)
+                    gen_genotypes.append(child_gen)
+            curr_gen_phase_matrix = np.vstack(gen_genotypes)
+            currGen = newGen
     return generationLists
 
 def main():
