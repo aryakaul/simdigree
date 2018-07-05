@@ -5,12 +5,13 @@ import random
 import sys
 
 class Person:
-    def __init__(self, name, genotype=None, parents=None, childrennames=None, affected="unknown"):
+    def __init__(self, name, genotype=None, parents=None, childrennames=None, affected="unknown", genotype_snps=None):
         self.name = name
         self.genotype = genotype
         self.parents = parents
         self.children = childrennames
         self.affected = affected
+        self.genotype_snps = genotype_snps
 
     def __str__(self):
         return("Person: %s\nParents: %s\nChildren: %s\nAffected?: %s\n" % (self.get_name(), self.get_parents(), self.get_children(), self.is_affected()))
@@ -24,6 +25,7 @@ class Person:
     def get_genotype(self, founder_genotype_matrix, curr_gen_genotype_matrix):
         genidx = self.genotype
         if self.is_founder(): return list(founder_genotype_matrix[genidx,:])
+        elif self.is_random(): return self.get_genotype_snps()
         else: return list(curr_gen_genotype_matrix[genidx,:])
 
     def get_parents(self):
@@ -36,6 +38,9 @@ class Person:
     def get_children(self):
         return self.children
 
+    def is_random(self):
+        return self.get_name().startswith("random")
+
     def is_affected(self):
         if self.affected==True:
             return True
@@ -43,6 +48,9 @@ class Person:
             return False
         else:
             return "unknown"
+
+    def get_genotype_snps(self):
+        return self.genotype_snps
 
     def set_parents(self, parent1id, parent2id):
         self.parents = (parent1id, parent2id)
@@ -61,6 +69,9 @@ class Person:
             childlist = self.children
         childlist.append(childrenid)
         self.children = childlist
+
+    def set_genotype_snps(self, snps):
+        self.genotype_snps = snps
 
 def mating(child_id, parent1, parent2, founder_mat, currgen_genmat):
     child_gen = phase_parents(parent1, parent2, founder_mat, currgen_genmat)
@@ -194,80 +205,6 @@ def rollDie(prob, sides):
     for i in range(1, len(prob)):
         if prob[i-1]<x<=prob[i]:
             return sides[i]
-
-"""
-def genotype_mating(person1, person2, genotype_matrix):
-    person1Genotype = person1.get_genotype()
-    person2Genotype = person2.get_genotype()
-
-    if len(person1Genotype) != len(person2Genotype):
-        print("ERROR - Genotypes are not the same length")
-        print("%s - Person 1's # of genotypes" % len(person1Genotype))
-        print("%s - Person 2's # of genotypes" % len(person2Genotype))
-        sys.exit(2)
-
-    genotype = []
-    for snps in range(len(person1Genotype)):
-        currSNP1 = person1Genotype[snps]
-        currSNP2 = person2Genotype[snps]
-        babysnp = snp_mating(currSNP1, currSNP2)
-        genotype.append(babysnp)
-    return genotype
-"""
-
-"""
-def snp_mating(snp1genotype, snp2genotype):
-    possiblecrossings = {
-        "hetcrosshet":(1,1),
-        "hetcrosshomalt":(1,2),
-        "hetcrosshomref":(0,1),
-        "homaltcrossref":(0,2),
-        "homrefcrosshomref":(0,0),
-        "homaltcrosshomalt":(2,2),
-    }
-
-    ourPairing = tuple(sorted([snp1genotype, snp2genotype]))
-    realcross = None
-    for gens in possiblecrossings:
-        if ourPairing == possiblecrossings[gens]:
-            realcross = gens
-            #print(ourPairing)
-            #print(realcross)
-
-    if realcross == "hetcrosshet":
-        prob = [0.25,0.75,1]
-        sides = [0,1,2]
-
-    elif realcross == "hetcrosshomalt":
-        prob = [0.5,1]
-        sides = [1,2]
-
-    elif realcross == "hetcrosshomref":
-        prob = [0.5,1]
-        sides = [0,1]
-
-    elif realcross == "homaltcrossref":
-        prob = [1]
-        sides = [1]
-
-    elif realcross == "homrefcrosshomref":
-        prob = [1]
-        sides = [0]
-
-    elif realcross == "homaltcrosshomalt":
-        prob = [1]
-        sides = [2]
-
-    else:
-        print("Impossible cross being studied")
-        print("%s=first parent's genotype" % (snp1genotype))
-        print("%s=second parent's genotype" % (snp2genotype))
-        sys.exit(2)
-
-    babyGen = rollDie(prob, sides)
-    return babyGen
-"""
-
 
 def main():
    print(snp_mating(2,1))

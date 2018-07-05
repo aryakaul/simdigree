@@ -36,6 +36,8 @@ def read_vcf(path):
     allpeople = {}
     for i in range(len(geno_dosage)):
         allpeople["i"+str(i)]=Person("founder-i"+str(i), i)
+        x = list(geno_dosage[i,:])
+        allpeople["i"+str(i)].set_genotype_snps(x)
 
     return geno_dosage, abs(sel_coeff), allele_freqs, chrom_num, allpeople
 
@@ -106,21 +108,25 @@ def determine_healthy_affected(snpfilein, effectfilein, liabilityThres):
     healthy,affected = gen_healthy_affected(np.array(effectcolvec).T, np.asmatrix(snp_matrix), liabilityThres, allpeople)
     return healthy, affected
 
-def write_pedigree(listofpeople, outfile):
+def write_fam(listofpeople, outfile):
     with open(outfile, 'w') as f:
         for people in listofpeople:
             line = []
-            line.append("1")
-            line.append(people.get_name())
+            line.append("1") #FID
+            line.append(people.get_name()) #IID
             try:
-                line.append(people.get_parents()[0])
+                line.append(people.get_parents()[0]) # parents
                 line.append(people.get_parents()[1])
             except:
-                line.append(".")
-                line.append(".")
-            line.append("3")
-            for snp in people.get_genotype():
-                line.append(str(snp))
+                line.append("0")
+                line.append("0")
+            line.append("0") #sex
+            if people.is_affected() is True:
+                line.append("2")
+            elif people.is_affected() is False:
+                line.append("1")
+            else:
+                line.append("0")
             linestr = '\t'.join([str(i) for i in line])
             linestr += "\n"
             #linestr = str(*line, sep="\t")

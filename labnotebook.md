@@ -50,3 +50,7 @@ Once this is done, I'll begin working on the `pedigree` functionality of `simdig
 Started working on the **1** task identified yesterday, the vcf input functionality. I plan on adapting Onuralp's code for this purpose. One thing I need to also understand greater is Onuralp drawing a distinction between heterozygous individuals (0|1 vs 1|0).
 
 I have successfully completed #1, #3, #4, and #5. I still need to develop the affected status calculation; however, I think I'm on the right track.
+
+#### 2018-07-05
+Completed the `generate` function! Output is a FAM file with information about status of each person generated. Next step is to code up the scenario where a hardcoded pedigree is given to me. To this end I'm considering using a new datatype? IDK not 100% sure. I'll start working on the code tomorrow and see how I feel. But looking good so far!
+
