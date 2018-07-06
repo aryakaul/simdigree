@@ -73,7 +73,7 @@ for FAMFILES in /net/home/akaul/projs/Simdigree/git-simdigree/tests/pedigrees/st
     name="$PEDSTRUCTS"
     jobFile=/net/home/akaul/projs/Simdigree/jobs-simdigree/output-simdigree/2018-07-06/simdigree.job.$name
     cat $jobMaker > $jobFile
-    echo "python $SIMDIGREE pedigree -T 500 -i $vcf -p $FAMFILES -l 0.0005, 0.001, 0.01, 0.05, 0.10 -o $output/$name" >> $jobFile
+    echo "python $SIMDIGREE pedigree -T 500 -i $vcf -p $FAMFILES -l 0.0005 0.001 0.01 0.05 0.10 -o $output/$name" >> $jobFile
     qsub $jobFile
 done
 
@@ -82,6 +82,9 @@ done
 output=/net/home/akaul/projs/Simdigree/jobs-simdigree/output-simdigree/2018-07-06/GENERATE
 jobFile=/net/home/akaul/projs/Simdigree/jobs-simdigree/output-simdigree/2018-07-06/simdigree.job.generate
 cat $jobMaker > $jobFile
-echo "python $SIMDIGREE generate -T 500 -i $vcf -p $FAMFILES -l 0.0005, 0.001, 0.01, 0.05, 0.10 -o $output" >> $jobFile
+echo "python $SIMDIGREE generate -T 500 -i $vcf -p $FAMFILES -l 0.0005 0.001 0.01 0.05 0.10 -o $output" >> $jobFile
 qsub $jobFile 
 ```
+Future things to do:
+1. Add Tau value list functionality (give me a shitton of tau values)
+2. Make hardcoded pedigrees based on medical cases
