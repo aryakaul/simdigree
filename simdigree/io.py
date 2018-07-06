@@ -7,6 +7,10 @@ try:
 except:
     from .person import Person
 import numpy as np
+try:
+    from dummy import Dummy
+except:
+    from .dummy import Dummy
 import pandas as pd
 
 #modified from Onuralp's code
@@ -132,10 +136,34 @@ def write_fam(listofpeople, outfile):
             #linestr = str(*line, sep="\t")
             f.write(linestr)
 
+def read_fam(famfile):
+    individs = {}
+    with open(famfile, 'r') as f:
+        for lines in f:
+            line = lines.rstrip().split()
+            famid = line[0]
+            individ = line[1]
+            father = line[2]
+            mother = line[3]
+            x = [father, mother]
+            x.sort()
+            if father == "0" and mother == "0": founder = True
+            else: founder = False
+            if individ not in individs:
+                dummy = Dummy((x[0], x[1]), founder)
+                individs[individ] = dummy
+        for dummies in individs:
+            dummy = individs[dummies]
+            if dummy.is_founder(): continue
+            parents = dummy.get_parents()
+            f = individs[parents[0]]
+            m = individs[parents[1]]
+            f.add_child(dummies)
+            m.add_child(dummies)
+    return individs
+
 def main():
-    allpeople, snp_matrix = readin_snpmatrix("../tests/matrices/test-snpmatrix_4ppl-5snps")
-    effectcolvec = readin_effectvec("../tests/matrices/test-effectvec_4ppl-5snps")
-    healthy,affected = gen_healthy_affected(np.array(effectcolvec).T, np.asmatrix(snp_matrix), 0.01, allpeople)
+    pass
 
 if __name__ == "__main__":
     main()

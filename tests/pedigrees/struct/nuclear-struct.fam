@@ -1,0 +1,4 @@
+fam1 fam1:1 0 0 0 0
+fam1 fam1:2 0 0 0 0
+fam1 fam1:3 fam1:1 fam1:2 0 0
+fam1 fam1:5 fam1:1 fam1:2 0 0

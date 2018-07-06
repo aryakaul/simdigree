@@ -54,3 +54,34 @@ I have successfully completed #1, #3, #4, and #5. I still need to develop the af
 #### 2018-07-05
 Completed the `generate` function! Output is a FAM file with information about status of each person generated. Next step is to code up the scenario where a hardcoded pedigree is given to me. To this end I'm considering using a new datatype? IDK not 100% sure. I'll start working on the code tomorrow and see how I feel. But looking good so far!
 
+#### 2018-07-06
+Finished the `pedigree` function! GUCCI GANG GUCCI GANG GUCCI GANG. I am currently running it on the large vcf provided by Onuralp (500 loci) and testing the generate/pedigree function.
+
+The full runall command is produced below:
+```
+#!/bin/bash
+source /net/lib/python3.3/bin/activate
+cd /net/home/akaul/projs/Simdigree/jobs-simdigree
+SIMDIGREE=/net/home/akaul/projs/Simdigree/git-simdigree/main.py
+jobMaker=/net/home/akaul/projs/Simdigree/jobs-simdigree/jobMaker
+vcf=/net/home/akaul/projs/Simdigree/jobs-simdigree/data-simdigree/vcf/A1_500_1.vcf
+
+output=/net/home/akaul/projs/Simdigree/jobs-simdigree/output-simdigree/2018-07-06/PEDIGREE
+for FAMFILES in /net/home/akaul/projs/Simdigree/git-simdigree/tests/pedigrees/struct/*; do
+    fam=$(basename $FAMFILES)
+    IFS='-' read -ra PEDSTRUCTS <<< "$fam"
+    name="$PEDSTRUCTS"
+    jobFile=/net/home/akaul/projs/Simdigree/jobs-simdigree/output-simdigree/2018-07-06/simdigree.job.$name
+    cat $jobMaker > $jobFile
+    echo "python $SIMDIGREE pedigree -T 500 -i $vcf -p $FAMFILES -l 0.0005, 0.001, 0.01, 0.05, 0.10 -o $output/$name" >> $jobFile
+    qsub $jobFile
+done
+
+
+
+output=/net/home/akaul/projs/Simdigree/jobs-simdigree/output-simdigree/2018-07-06/GENERATE
+jobFile=/net/home/akaul/projs/Simdigree/jobs-simdigree/output-simdigree/2018-07-06/simdigree.job.generate
+cat $jobMaker > $jobFile
+echo "python $SIMDIGREE generate -T 500 -i $vcf -p $FAMFILES -l 0.0005, 0.001, 0.01, 0.05, 0.10 -o $output" >> $jobFile
+qsub $jobFile 
+```

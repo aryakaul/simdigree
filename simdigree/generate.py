@@ -1,6 +1,5 @@
 #!/bin/env/python
 
-import argparse
 import sys
 import os
 from numpy import random as npr
@@ -15,7 +14,7 @@ def generate_random_normal_INT(mean):
     return int(npr.normal(loc=mean))
 
 def generate_random_person(name, numSNPs):
-    choices = [0,1,2]
+    choices = [0,1,2,3]
     rand_gen = list(npr.choice(choices, numSNPs))
     randopeep = Person(name, rand_gen)
     randopeep.set_genotype_snps(rand_gen)
