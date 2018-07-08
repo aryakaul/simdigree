@@ -1,5 +1,6 @@
 #!/net/home/akaul/miniconda3/bin/python3.6
 
+import time
 import argparse
 import sys
 import math
@@ -19,7 +20,7 @@ def parser_args(args):
     parser_pedigree.add_argument('-i', '--inputvcf', help="Path to the vcf file being used", type=str, required=True)
     parser_pedigree.add_argument('-T', '--noLoci', help="Number of loci being used", type=int, required=True)
     parser_pedigree.add_argument('-t', '--tau', help="Tau value for effect calculation. Default is 0.5", type=float, required=False, default=0.5)
-    #TODO put actually right thing here ^
+    #TODO change this to accept a list of values
     parser_pedigree.add_argument('-l', '--liabilityThreshold', help="Float value(s) representing the liability threshold percentage(s) being used. Default is 0.01", type=float, required=False, nargs = '*')
     parser_pedigree.add_argument('-p', '--fam', help="Path to the ped file to use", type=str, required=True)
     parser_pedigree.add_argument('-o', '--output', help="Path to the output folder to dump simdigree's output to. Default is working directory under /simdigree_output", type=str, required=False, default="./simdigree_output")
@@ -45,14 +46,14 @@ def calculate_dosage_matrix(founder_genotype_phase_matrix):
     for k, v in doses.items(): x[founder_genotype_phase_matrix==k] = v
     return x
 
-def calculate_scaling_constant(s, maf, tau=0.5, h2=0.5):
+def calculate_scaling_constant(s, maf, tau, h2=0.5):
     C = np.sqrt(h2 / np.sum(2 * maf * (1 - maf) * ((s ** tau) ** 2)))
     if math.isnan(C):
         print("WARNING - Negative value found during square root for scaling constant...\nC = 1")
         C = 1
     return C
 
-def calculate_liability(X, s, C, tau=0.5, h2=0.5):
+def calculate_liability(X, s, C, tau, h2=0.5):
     b = (s ** tau) * C
     G = X @ b
     G = G.reshape(len(G))
@@ -63,10 +64,16 @@ def main():
     args = parser_args(sys.argv[1:])
     if not os.path.exists(args.output):
         os.makedirs(args.output)
+    start = time.time()
     founder_genotype_phase_matrix, selection_coeff, allele_freqs, chrom_num, all_founders = read_vcf(args.inputvcf)
+    end = time.time()
+    print("Time took to read in vcf file... %s" % (end-start))
+    start = time.time()
     founder_dosage = calculate_dosage_matrix(founder_genotype_phase_matrix)
-    C = calculate_scaling_constant(selection_coeff, allele_freqs)
-    effects_people, effects_snps = calculate_liability(founder_dosage, selection_coeff, C)
+    C = calculate_scaling_constant(selection_coeff, allele_freqs, args.tau)
+    effects_people, effects_snps = calculate_liability(founder_dosage, selection_coeff, C, args.tau)
+    end = time.time()
+    print("Time took to calculate liability of founders... %s" % (end-start))
     listOfThresholds = []
     founder_outliers = []
     if args.liabilityThreshold is None:
@@ -84,7 +91,10 @@ def main():
         if args.ancestor2: founder2 = parse_inputNames(args.ancestor2)
         else: founder2 = None
 
+        start = time.time()
         generations, selection_coeff_new = generate_pedigree(founder1, founder2, founder_genotype_phase_matrix, args.reproduction, args.generation, args.marriagerate, all_founders, chrom_num, args.noLoci, selection_coeff)
+        end = time.time()
+        print("Time took to generate pedigree... %s" % (end-start))
 
     elif args.command=="pedigree":
         individs = read_fam(args.fam)
@@ -97,13 +107,17 @@ def main():
                 pairs[pair.get_pair()] = pair
             else: pair = pairs[pair.get_pair()]
             pair.children = individs[dummy.get_parents()[0]].get_children()
+        start = time.time()
         generations, selection_coeff_new = recreate_pedigree(individs, pairs, all_founders, founder_genotype_phase_matrix, args.noLoci, chrom_num, selection_coeff)
+        end = time.time()
+        print("Time took to model pedigree... %s" % (end-start))
 
     else:
         print("Unrecognized sub-command, valid options are {pedigree, generate}. Command given: %s" % args.command)
         sys.exit(2)
 
     for tidx in range(len(lT)):
+        start = time.time()
         founder_derived_threshold = listOfThresholds[tidx]
         gt_matrix = []
         maxlen = 0
@@ -140,7 +154,6 @@ def main():
         C = calculate_scaling_constant(selection_coeff, allele_freq_nonfounder)
         effects_nonfounders, effects_snps_wdenovo = calculate_liability(nonfounder_dosage, selection_coeff_new, C)
         nonfounder_outliers = np.argwhere(effects_nonfounders > founder_derived_threshold)
-        #print(nonfounder_outliers)
         for people in generations:
             if people.is_founder(): continue
             pos = people.ctr_liab
@@ -148,6 +161,8 @@ def main():
                 people.set_affected(False)
             else:
                 people.set_affected(True)
+        end = time.time()
+        print("Time took to calculate who is affected... %s" % (end-start))
         write_fam(generations, os.path.join(args.output, "simdigree_out-liabThreshold-"+str(lT[tidx])+".fam"))
 
 

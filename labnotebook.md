@@ -88,3 +88,6 @@ qsub $jobFile
 Future things to do:
 1. Add Tau value list functionality (give me a shitton of tau values)
 2. Make hardcoded pedigrees based on medical cases
+
+#### 2018-07-07
+Fixed bug where a denovo mutation in one child would cause a different genotype length with the married partner. I have also rerun the jobs.

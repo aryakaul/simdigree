@@ -194,6 +194,13 @@ def phase_parents(parent1, parent2, founder_mat, currgen_mat):
     p1 = np.array([gt[x][a] for x in parent1])
     p2 = np.array([gt[x][b] for x in parent2])
 
+    ## in case one has denovo mutations. the length of their genotypes will be different. 
+    ## If this is the case, add zeros to one st. it goes 
+    while len(p1) > len(p2):
+        np.append(p2, 0)
+    while len(p2) > len(p1):
+        np.append(p1, 0)
+
     proband = (2 * p1) + p2
 
     return proband
