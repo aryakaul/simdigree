@@ -1,3 +1,16 @@
+##fileformat=VCFv4.2
+##fileDate=20180404
+##source=SLiM
+##INFO=<ID=MID,Number=1,Type=Integer,Description="Mutation ID in SLiM">
+##INFO=<ID=S,Number=1,Type=Float,Description="Selection Coefficient">
+##INFO=<ID=DOM,Number=1,Type=Float,Description="Dominance">
+##INFO=<ID=PO,Number=1,Type=Integer,Description="Population of Origin">
+##INFO=<ID=GO,Number=1,Type=Integer,Description="Generation of Origin">
+##INFO=<ID=MT,Number=1,Type=Integer,Description="Mutation Type">
+##INFO=<ID=AC,Number=1,Type=Integer,Description="Allele Count">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  i0      i1      i2      i3      i4      i5      i6      i7      i8      i9      i10     i11     i12   i13      i14     i15     i16     i17     i18     i19     i20     i21     i22     i23     i24     i25     i26     i27     i28     i29     i30     i31     i32     i33     i34   i35      i36     i37     i38     i39     i40     i41     i42     i43     i44     i45     i46     i47     i48     i49     i50     i51     i52     i53     i54     i55     i56   i57      i58     i59     i60     i61     i62     i63     i64     i65     i66     i67     i68     i69     i70     i71     i72     i73     i74     i75     i76     i77     i78   i79      i80     i81     i82     i83     i84     i85     i86     i87     i88     i89     i90     i91     i92     i93     i94     i95     i96     i97     i98     i99
 1 105758 . A T 1000 PASS MID=1570781;S=-5.68175e-06;DOM=0.5;PO=1;GO=20383;MT=3;AC=7028;DP=1000 GT 0|0 0|0 1|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 1|1 1|0 0|1 0|1 1|0 1|1 1|1 1|1 0|1 1|0 0|0 0|1 1|0 1|0 1|1 1|1 1|0 1|0 0|1 1|0 0|1 0|1 0|1 0|0 1|0 0|1 0|0 1|0 0|0 1|0 1|0 0|0 1|0 0|1 0|0 0|0 1|1 0|0 0|1 1|0 0|0 1|0 0|0 0|0 0|1 0|0 0|0 0|0 1|1 1|1 0|0 0|1 1|0 0|1 0|1 0|1 1|0 0|1 0|0 1|1 1|1 0|0 1|0 0|1 1|1 0|1 0|0 0|0 0|1 1|0 1|1 0|1 0|1 1|1 0|0 1|1 1|0 1|0 1|1 1|0 0|1 1|0 0|1 1|0 0|1 0|1 0|0 0|0 1|0
 1 106729 . A T 1000 PASS MID=2042620;S=-4.74562e-05;DOM=0.5;PO=1;GO=26501;MT=3;AC=7028;DP=1000 GT 0|0 0|0 1|0 0|0 0|0 0|1 0|0 0|0 0|0 0|1 0|0 1|1 1|0 0|1 0|1 1|0 1|1 1|1 1|1 0|1 1|0 0|0 0|1 1|0 1|0 1|1 1|1 1|0 1|0 0|1 1|0 0|1 0|1 0|1 0|0 1|0 0|1 0|0 1|0 0|0 1|0 1|0 0|0 1|0 0|1 0|0 0|0 1|1 0|0 0|1 1|0 0|0 1|0 0|0 0|0 0|1 0|0 0|0 0|0 1|1 1|1 0|0 0|1 1|0 0|1 0|1 0|1 1|0 0|1 0|0 1|1 1|1 0|0 1|0 0|1 1|1 0|1 0|0 0|0 0|1 1|0 1|1 0|1 0|1 1|1 0|0 1|1 1|0 1|0 1|1 1|0 0|1 1|0 0|1 1|0 0|1 0|1 0|0 0|0 1|0
 1 100841 . A T 1000 PASS MID=3393389;S=-4.72085e-06;DOM=0.5;PO=1;GO=44026;MT=3;AC=6621;DP=1000 GT 0|0 0|1 0|1 1|1 0|0 1|0 1|0 0|0 1|1 1|0 0|1 0|0 0|0 1|0 1|0 0|1 0|0 0|0 0|0 0|0 0|1 0|1 0|0 0|1 0|1 0|0 0|0 0|1 0|0 1|0 0|1 1|0 1|0 0|0 0|1 0|0 0|0 0|0 0|1 1|1 0|0 0|1 0|0 0|1 0|0 1|0 1|0 0|0 0|0 1|0 0|0 1|0 0|0 1|1 1|1 1|0 1|1 1|0 1|1 0|0 0|0 1|1 0|0 0|0 0|0 0|0 1|0 0|1 0|0 1|0 0|0 0|0 0|0 0|0 1|0 0|0 1|0 1|1 1|1 1|0 0|1 0|0 1|0 0|0 0|0 1|1 0|0 0|1 0|0 0|0 0|1 0|0 0|0 1|0 0|1 0|0 0|0 1|0 1|0 0|1

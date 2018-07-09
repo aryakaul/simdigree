@@ -91,3 +91,7 @@ Future things to do:
 
 #### 2018-07-07
 Fixed bug where a denovo mutation in one child would cause a different genotype length with the married partner. I have also rerun the jobs.
+
+
+#### 2018-07-09
+So over the weekend all the jobs ran and subsequently crashed. All were due to memory issues. To rectify this issue I have created a new 'utils' folder and under that folder I have put one subset-vcf.sh script. This handy dandy little script reads in a given pedigree file, determines how many founders need to be sampled from it, and then randomly subsets the given (large) vcf into a smaller one. There are further improvements I can make to the `simdigree` code that are fairly straightforward, and I plan on tackling those tomorrow. 
