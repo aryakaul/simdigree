@@ -14,6 +14,7 @@ OUTPUT=$3
 echo "Pedigree being used... $PED"
 echo "Output directed to... $OUTPUT"
 echo "VCF being used... $VCF"
+OUTPUTDIR=$(dirname "${OUTPUT}")
 echo ""
 num_founders_needed=$(cat $PED | awk 'BEGIN { count = 0 } { if ( $3=="0" && $4=="0" ) {  count++ } } END { print count }')
 num_founders_provided=$(grep '^#' -v -m 1 $VCF | awk '{ print NF-9 } ')
@@ -27,9 +28,9 @@ fi
 
 random_founders=$(shuf -i 0-$num_founders_provided -n $num_founders_needed)
 for indiv in $random_founders; do
-    echo "i$indiv" >> ./temp-subset
+    echo "i$indiv" >> $OUTPUTDIR/temp-subset
 done
 
-cat $VCF | tr ' ' '\t' | vcf-subset -c ./temp-subset > $OUTPUT
+cat $VCF | tr ' ' '\t' | vcf-subset -c $OUTPUTDIR/temp-subset > $OUTPUT
 echo "Completed"
-rm ./temp-subset
+rm $OUTPUTDIR/temp-subset

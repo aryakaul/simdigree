@@ -11,6 +11,15 @@ try:
 except:
     from .generate import generate_shuffle, generate_mate
 
+def return_subset_number(pedigree):
+    founder = 0
+    with open(pedigree, 'r') as filein:
+        for lines in filein:
+            line = lines.rstrip().split()
+            if line[2] == "0" and line[3] == "0": founder += 1
+
+    return founder
+
 def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase_matrix, num_loci, chrom_num, sel_coeff):
     generationLists = []
     founders_shuffled = generate_shuffle(all_founders)

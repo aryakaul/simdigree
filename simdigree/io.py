@@ -1,5 +1,5 @@
-#!/bin/env/python
-
+#!/bin/env/python 
+import numpy.random as npr
 import sys
 import os
 try:
@@ -14,14 +14,13 @@ except:
 import pandas as pd
 
 #modified from Onuralp's code
-def read_vcf(path):
+def read_vcf(path, founders_desired):
     """
     Extract selective effects and allele frequencies of causal variants from VCF generated using SLiM. Note that the
     header and non-causal variants (those outside the mutational target) were removed from the original VCF output.
     """
-
     #read in vcf file
-    df = pd.read_csv(path, sep='\s+', header=None, comment='#', keep_default_na=False, low_memory=False, engine='c', dtype='str')
+    df = pd.read_csv(path, delim_whitespace=True, header=None, comment='#', keep_default_na=False, low_memory=False, engine='c', dtype='str')
     no_samples = df.shape[1]-9
 
     # extract selective effects `s` and allele counts `ac`, calculate allele frequencies `x`
@@ -32,16 +31,20 @@ def read_vcf(path):
     # track locus id
     chrom_num = df[0].values
 
+    #generate random founders to subset
+    founders_to_subset=npr.randint(low=9,high=no_samples+9, size=founders_desired)
+    print("Founders will be the following... %s" % founders_to_subset)
+
     # construct genotype matrix (one-hot encoding)
-    genotypes = df.loc[:, 9:(no_samples + 9)].T.values
+    genotypes = df.loc[:, founders_to_subset].T.values
     dosage = {'0|0': 0, '0|1': 1, '1|0': 2, '1|1': 3}
     geno_dosage = np.vectorize(dosage.get)(genotypes)
 
     allpeople = {}
     for i in range(len(geno_dosage)):
-        allpeople["i"+str(i)]=Person("founder-i"+str(i), i)
+        allpeople["i"+str(founders_to_subset[i])]=Person("founder-i"+str(founders_to_subset[i]), i)
         x = list(geno_dosage[i,:])
-        allpeople["i"+str(i)].set_genotype_snps(x)
+        allpeople["i"+str(founders_to_subset[i])].set_genotype_snps(x)
 
     return geno_dosage, abs(sel_coeff), allele_freqs, chrom_num, allpeople
 

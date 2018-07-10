@@ -94,4 +94,11 @@ Fixed bug where a denovo mutation in one child would cause a different genotype 
 
 
 #### 2018-07-09
-So over the weekend all the jobs ran and subsequently crashed. All were due to memory issues. To rectify this issue I have created a new 'utils' folder and under that folder I have put one subset-vcf.sh script. This handy dandy little script reads in a given pedigree file, determines how many founders need to be sampled from it, and then randomly subsets the given (large) vcf into a smaller one. There are further improvements I can make to the `simdigree` code that are fairly straightforward, and I plan on tackling those tomorrow. 
+So over the weekend all the jobs ran and subsequently crashed. All were due to memory issues. To rectify this issue I have created a new 'utils' folder and under that folder I have put one `subset-vcf.sh` script. This handy dandy little script reads in a given pedigree file, determines how many founders need to be sampled from it, and then randomly subsets the given (large) vcf into a smaller one. There are further improvements I can make to the `simdigree` code that are fairly straightforward, and I plan on tackling those tomorrow. 
+
+#### 2018-07-10
+I am rerunning the jobs from yesterday. Realized a small bug in the initial bash script. Today, I'd like to work on the Tau list functionality, and then tackle memory consumption. If I have time, I would also like to fully comment everything.
+
+I am currently testing the tau value list functionality. I placed it at the bottom of my method call, right before the liability threshold calculation...
+
+I have modified the code from yesterday. Instead of subsetting the vcf beforehand, I'll read it into memory, and then subset it while it's in memory only storing and operating on the subsetted matrix. So far, it appears to be working well; however, we'll see how long that lasts. In addition, I have implemented tau list functionality and it appears to be working properly. I've begun commenting things as the jobs are running in the background.
