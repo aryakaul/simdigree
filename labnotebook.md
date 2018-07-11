@@ -102,3 +102,15 @@ I am rerunning the jobs from yesterday. Realized a small bug in the initial bash
 I am currently testing the tau value list functionality. I placed it at the bottom of my method call, right before the liability threshold calculation...
 
 I have modified the code from yesterday. Instead of subsetting the vcf beforehand, I'll read it into memory, and then subset it while it's in memory only storing and operating on the subsetted matrix. So far, it appears to be working well; however, we'll see how long that lasts. In addition, I have implemented tau list functionality and it appears to be working properly. I've begun commenting things as the jobs are running in the background.
+
+#### 2018-07-11
+All the jobs from yesterday have finished running. With the exception of the 'deep' pedigree, they all completed within ~20 minutes and used ~11GB of memory. I don't understand why the deep pedigree did not finish running, and am gonna run some TESTS to find out why.
+
+So oddly, the deep pedigree worked when I ran it on a smaller vcf swimmingly. I'm gonna try again and see if it was a mysterious 'cluster' issue. IT'S RUNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNING.
+
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH.
+
+IT WORKED. idk what the initial issue was, but it is working WELL. 
+
+Commit #1 ---> changed name of saved files to be better, also changed print statements around.
+

@@ -81,6 +81,9 @@ def calculate_liability(X, s, C, tau, h2=0.5):
 
 def main():
     args = parser_args(sys.argv[1:])
+    startTHUGE = time.time()
+
+
 
     # Read in the vcf file and extract a couple useful things:
     ## founder_genotype_phase_matrix
@@ -225,9 +228,11 @@ def main():
                     people.set_affected(True)
             end = time.time()
             print("Time took to calculate who is affected... %s" % (end-start))
-            write_fam(generations, os.path.join(args.output, "simdigree_out-liabThreshold-"+str(lT[tidx])+"tau-"+str(tauValue)+".fam"))
+            write_fam(generations, os.path.join(args.output, "simdigree_out-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".fam"))
         endbig = time.time()
         print("Time to calculate given tau value was %s" % (endbig-startbig))
 
+    endTHUGE = time.time()
+    print("TOTAL TIME TOOK... %s" % (endTHUGE-startTHUGE))
 if __name__ == "__main__":
     main()

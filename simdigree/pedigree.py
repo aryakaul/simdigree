@@ -34,7 +34,7 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
         par1 = pair.get_pair()[0]
         par2 = pair.get_pair()[1]
         if individs[par1].is_founder() and individs[par2].is_founder():
-            print("founder pair found")
+            print("Founder pair found")
             print(pair)
             founder_pair = pair
             dummypairs.pop(pairname)
@@ -45,6 +45,7 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
     founderName = founders_shuffled.pop(0)
     founder2Name = all_founders[founderName]
     founder2 = all_founders[founderName]
+    print("Marriage between %s and %s" % (founder1.get_name(), founder2.get_name()))
     founder1.set_genotype_snps(list(recombine_founder_genotype_phase_matrix[founder1.genotype,:]))
     founder2.set_genotype_snps(list(recombine_founder_genotype_phase_matrix[founder2.genotype,:]))
     generationLists.append(founder1)
@@ -52,6 +53,7 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
     generation = "g1-i"
     currGen = []
     gen_genotypes = []
+    print("They will have %s children" % founder_pair.get_num_children())
     for i in range(founder_pair.get_num_children()):
         childname = founder_pair.get_children()[i]
         #no current gen genotype matrix hence the None below
