@@ -115,3 +115,8 @@ IT WORKED. idk what the initial issue was, but it is working WELL.
 Commit #1 ---> changed name of saved files to be better, also changed print statements around.
 
 I created the pedigree files from clinical data (not on github cause of obvious hippa violations) and am in the process of running simdigree on them. One thing I noticed flawed with my `pedigree` approach is that I do not allow pedigrees with 'multiple' founders. I'll start working on a fix for that next.
+
+#### 2018-07-12
+Added output functionality where I also output the genotype matrix and the snp effects column vector. Also patched some bugs with `pedigree` function and dealing with denovo mutations.
+
+NOW next on list is the multipple founders stuff

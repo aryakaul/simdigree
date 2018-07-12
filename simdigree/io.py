@@ -165,6 +165,34 @@ def read_fam(famfile):
             m.add_child(dummies)
     return individs
 
+def write_effect_snps(colvec, output):
+    with open(output, 'w') as fi:
+        for x in colvec:
+            fi.write("%s\n" % x)
+
+def write_genotype_matrix(generations, output):
+    gen_matrix = {}
+    for i in generations: gen_matrix[i.get_name()] = i.get_genotype_snps()
+    max_len = 0
+    for g in gen_matrix:
+        if len(gen_matrix[g]) > max_len: max_len = len(gen_matrix[g])
+    for g in gen_matrix:
+        diff = max_len - len(gen_matrix[g])
+        if diff < 0:
+            print("error diff = %s" % diff)
+            sys.exit(2)
+        elif diff == 0: continue
+        else:
+            zeros = np.zeros(diff)
+            gen_matrix[g]=np.append(gen_matrix[g], zeros)
+    with open(output, 'w') as fileout:
+        for g in gen_matrix:
+            stringToWrite = []
+            stringToWrite.append(g)
+            for j in gen_matrix[g]: stringToWrite.append(str(j))
+            linestr = '\t'.join(stringToWrite)
+            fileout.write(linestr+"\n")
+
 def main():
     pass
 

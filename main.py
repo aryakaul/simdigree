@@ -5,7 +5,7 @@ import argparse
 import sys
 import math
 import os
-from simdigree.io import parse_inputNames, read_vcf, write_fam, read_fam
+from simdigree.io import parse_inputNames, read_vcf, write_fam, read_fam, write_effect_snps, write_genotype_matrix
 from simdigree.generate import *
 from simdigree.pedigree import recreate_pedigree, return_subset_number
 from simdigree.person import mating
@@ -102,10 +102,11 @@ def main():
     #### the chromosomal location of each SNP
     ## all_founders
     #### a dictionary with a key, value pair where the key is 'i' followed
-    #### by the number where it appears in the matrix and the value
+    #### by the number where it appears in the founder matrix and the value
     #### associated with the Person object created with that founder
     if args.command == "pedigree":
         subset_number = return_subset_number(args.fam)
+        print("VCF will be subsetted to this number...%s" % subset_number)
     elif args.command == "generate":
         subset_number = args.founders
     else:
@@ -119,6 +120,7 @@ def main():
 
     if not os.path.exists(args.output):
         os.makedirs(args.output)
+    basepath = args.output
 
 
     if args.command == "generate":
@@ -128,8 +130,7 @@ def main():
         if args.ancestor2: founder2 = parse_inputNames(args.ancestor2)
         else: founder2 = None
 
-
-        # Randomly generate a 
+        #TODO COMMENTS HERE
         start = time.time()
         generations, selection_coeff_new = generate_pedigree(founder1, founder2, founder_genotype_phase_matrix, args.reproduction, args.generation, args.marriagerate, all_founders, chrom_num, args.noLoci, selection_coeff)
         end = time.time()
@@ -163,6 +164,9 @@ def main():
         lT = args.liabilityThreshold
 
     for tauValue in tauValues:
+        taupath = os.path.join(basepath, "tau-"+str(tauValue)+"/")
+        if not os.path.exists(taupath):
+            os.makedirs(taupath)
         startbig = time.time()
         print("Calculating all values for tau value of %s" % tauValue)
         start = time.time()
@@ -181,6 +185,9 @@ def main():
 
         print("Looping through all liability thresholds")
         for tidx in range(len(lT)):
+            outputpath = os.path.join(taupath, "lb-"+str(lT[tidx])+"/")
+            if not os.path.exists(outputpath):
+                os.makedirs(outputpath)
             print("On liability threshold of %s" % lT[tidx])
             start = time.time()
             founder_derived_threshold = listOfThresholds[tidx]
@@ -228,7 +235,9 @@ def main():
                     people.set_affected(True)
             end = time.time()
             print("Time took to calculate who is affected... %s" % (end-start))
-            write_fam(generations, os.path.join(args.output, "simdigree_out-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".fam"))
+            write_fam(generations, os.path.join(outputpath, "simdigree_out-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".fam"))
+            write_effect_snps(effects_snps_wdenovo, os.path.join(outputpath, "simdigree_out-effects_snps"))
+            write_genotype_matrix(generations, os.path.join(outputpath, "simdigree_out-dosage"))
         endbig = time.time()
         print("Time to calculate given tau value was %s" % (endbig-startbig))
 

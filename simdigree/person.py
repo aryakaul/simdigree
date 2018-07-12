@@ -183,24 +183,31 @@ def add_denovo_hms(X, s, old_index, num_loci,gamma_shape=0.31623, gamma_scale=0.
 
 #modified from Onuralp
 def phase_parents(parent1, parent2, founder_mat, currgen_mat):
-    parent1 = parent1.get_genotype(founder_mat, currgen_mat)
-    parent2 = parent2.get_genotype(founder_mat, currgen_mat)
+
     """
     Randomly sample gametes from each parent and generate offspring
     genotypes.
     """
+
+    ## in case one has denovo mutations. the length of their genotypes will be different. 
+    ## if this is the case, add zeros to one st. it goes 
+    pt1 = parent1.get_genotype(founder_mat, currgen_mat)
+    pt2 = parent2.get_genotype(founder_mat, currgen_mat)
+    parent1 = list(pt1)
+    parent2 = list(pt2)
+    if len(parent1) > len(parent2):
+        diff = len(parent1)-len(parent2)
+        zero = np.zeros(diff)
+        parent2 = np.append(parent2, zero)
+    elif len(parent2) > len(parent1):
+        diff = len(parent2)-len(parent1)
+        zero = np.zeros(diff)
+        parent1 = np.append(parent1, zero)
+
     gt = {0: [0, 0], 1: [0, 1], 2: [1, 0], 3: [1, 1]}
     a, b = np.random.randint(low=0, high=2, size=2)
     p1 = np.array([gt[x][a] for x in parent1])
     p2 = np.array([gt[x][b] for x in parent2])
-
-    ## in case one has denovo mutations. the length of their genotypes will be different. 
-    ## If this is the case, add zeros to one st. it goes 
-    while len(p1) > len(p2):
-        np.append(p2, 0)
-    while len(p2) > len(p1):
-        np.append(p1, 0)
-
     proband = (2 * p1) + p2
 
     return proband
@@ -214,7 +221,7 @@ def rollDie(prob, sides):
             return sides[i]
 
 def main():
-   print(snp_mating(2,1))
+    pass
 
 if __name__ == "__main__":
     main()

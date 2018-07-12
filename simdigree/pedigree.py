@@ -50,7 +50,6 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
     founder2.set_genotype_snps(list(recombine_founder_genotype_phase_matrix[founder2.genotype,:]))
     generationLists.append(founder1)
     generationLists.append(founder2)
-    generation = "g1-i"
     currGen = []
     gen_genotypes = []
     print("They will have %s children" % founder_pair.get_num_children())
@@ -65,9 +64,9 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
         generationLists.append(child)
         gen_genotypes.append(child_gen)
     current_gen_phase_matrix = np.vstack(gen_genotypes)
+    gen_genotypes = []
     randompersonctr = 1
     while len(dummypairs) != 0:
-        generations = 2
         curr_postrecomb_matrix = recombine(current_gen_phase_matrix, chrom_num, num_loci, num_founders)
         curr_postdenovo_matrix,sel_coeff,chrom_num= add_denovo_hms(curr_postrecomb_matrix, sel_coeff, chrom_num, num_loci)
         newGen = [] #store kids created here
@@ -86,15 +85,16 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
                     for i in range(noChildren):
                         childname = dummypairs[pairs].get_children()[i]
                         child, child_gen = mating(childname, children, partner, recombine_founder_genotype_phase_matrix, curr_postdenovo_matrix)
-                        child.set_genotype(i)
+                        child.set_genotype(len(newGen))
                         child.set_genotype_snps(child_gen)
                         print("Child #%s created" % (i+1))
+                        print("P1: %s\tP2: %s\tChild: %s" % (len(children.get_genotype_snps()), len(partner.get_genotype_snps()), len(child.get_genotype_snps())))
                         newGen.append(child)
-                        gen_cont = True
                         generationLists.append(child)
                         gen_genotypes.append(child_gen)
                     dummypairs.pop(pairs)
                     break
         currGen = newGen
         current_gen_phase_matrix = np.vstack(gen_genotypes)
+        gen_genotypes = []
     return generationLists, sel_coeff
