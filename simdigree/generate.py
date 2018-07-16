@@ -11,9 +11,21 @@ import random
 import numpy as np
 
 def generate_random_normal_INT(mean):
+
+    """
+    Returns a number from a normal distribution
+    with given mean
+    """
+
     return int(npr.normal(loc=mean))
 
 def generate_random_person(name, numSNPs):
+
+    """
+    Generate a random individual with a bunch of
+    random snps.
+    """
+
     choices = [0,1,2,3]
     rand_gen = list(npr.choice(choices, numSNPs))
     randopeep = Person(name, rand_gen)
@@ -21,19 +33,32 @@ def generate_random_person(name, numSNPs):
     return randopeep
 
 def generate_marriage_choice(prob):
+
+    """
+    We roll a dice and if it's greater than the
+    given probability of a marriage, we return True
+    """
+
     flip = npr.random_sample()
     return (prob>flip)
 
 def generate_shuffle(dic):
+
+    """
+    Given a dictionary, shuffle the keys
+    """
+
     keys = list(dic.keys())
     return (random.sample(keys, len(keys)))
 
-def generate_healthy_or_affected():
-    die = npr.rand()
-    if die > 0.5: return "healthy"
-    else: return "affected"
-
 def generate_mate(founders, numSNPs, randoctr):
+
+    """
+    Given a shuffled list of founders. Determine if we need to generate,
+    a random mate. If we do, generate one and return it. If not, just return
+    the founder
+    """
+
     randomname = "random-indiv"
     mate = None
     if len(founders) != 0:
@@ -45,7 +70,12 @@ def generate_mate(founders, numSNPs, randoctr):
         randoctr += 1
     return mate, randoctr
 
-def generate_pedigree(founder1Name, founder2Name, founder_genotype_phase_matrix, reproductionRate, generationNumber, marriageRate, all_founders, chrom_num, num_loci, sel_coeff):
+def generate_pedigree(founder_genotype_phase_matrix, reproductionRate, generationNumber, marriageRate, all_founders, chrom_num, num_loci, sel_coeff):
+
+    """
+    Given a lot of information, generate a novel, stochastically determined pedigree.
+    """
+
     #this list will store the necessary information for a later FAM and PED file output
     generationLists = []
 
@@ -56,21 +86,12 @@ def generate_pedigree(founder1Name, founder2Name, founder_genotype_phase_matrix,
     num_founders = len(all_founders)
     numSNPs = founder_genotype_phase_matrix.shape[1]
 
-    #Either find the founders or randomly select them
+    # Randomly determine initial founders
     ## Ensure that we remove them from the shuffled populations
-    if founder1Name is not None:
-        founder1 = all_founders["i"+str(founder1Name)]
-        founders_shuffled.remove("i"+str(founder1Name))
-    else:
-        founder1Name = founders_shuffled.pop(0)
-        founder1 = all_founders[founder1Name]
-
-    if founder2Name is not None:
-        founder2 = all_founders["i"+str(founder2Name)]
-        founders_shuffled.remove("i"+str(founder2Name))
-    else:
-        founder2Name = founders_shuffled.pop(0)
-        founder2 = all_founders[founder2Name]
+    founder1Name = founders_shuffled.pop(0)
+    founder1 = all_founders[founder1Name]
+    founder2Name = founders_shuffled.pop(0)
+    founder2 = all_founders[founder2Name]
     print("Founder1 will be %s" % (founder1))
     print("Founder2 will be %s" % (founder2))
     generationLists.append(founder1)
@@ -91,6 +112,7 @@ def generate_pedigree(founder1Name, founder2Name, founder_genotype_phase_matrix,
     gen_genotypes = []
     for i in range(noChildren):
         childname = generation + str(i)
+
         #no current gen genotype matrix hence the None below
         child, child_gen = mating(childname, founder1, founder2, recombine_founder_genotype_phase_matrix, None)
         child.set_genotype(i)
@@ -146,8 +168,14 @@ def generate_pedigree(founder1Name, founder2Name, founder_genotype_phase_matrix,
                     gen_cont = True
                     generationLists.append(child)
                     gen_genotypes.append(child_gen)
+
+        # overwrite the new current generation
         currGen = newGen
+
+        # create new genotype matrix
         current_gen_phase_matrix = np.vstack(gen_genotypes)
+
+    # return the new selection coefficiencts and the generation list
     return generationLists, sel_coeff
 
 def main():

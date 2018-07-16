@@ -12,6 +12,11 @@ except:
     from .generate import generate_shuffle, generate_mate
 
 def return_subset_number(pedigree):
+
+    """
+    Find out how many founders there are in the given file.
+    """
+
     founder = 0
     with open(pedigree, 'r') as filein:
         for lines in filein:
@@ -21,6 +26,11 @@ def return_subset_number(pedigree):
     return founder
 
 def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase_matrix, num_loci, chrom_num, sel_coeff):
+
+    """
+    Given a variety of inputs recreate the pedigree
+    """
+
     #list that will store all the people created
     generationLists = []
 
@@ -52,6 +62,8 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
             print(pair)
             founder_pairs.append(pair)
 
+
+    # loop through founder pairs
     currGen = []
     gen_genotypes = []
     for founder_pair in founder_pairs:
@@ -65,6 +77,8 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
         founder2.set_genotype_snps(list(recombine_founder_genotype_phase_matrix[founder2.genotype,:]))
         generationLists.append(founder1)
         generationLists.append(founder2)
+
+        # determine number of children and loop through them
         print("They will have %s children" % founder_pair.get_num_children())
         for i in range(founder_pair.get_num_children()):
             childname = founder_pair.get_children()[i]
@@ -76,30 +90,42 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
             currGen.append(child)
             generationLists.append(child)
             gen_genotypes.append(child_gen)
+
+    # create new genotype phasing matrix
     current_gen_phase_matrix = np.vstack(gen_genotypes)
     gen_genotypes = []
     randompersonctr = 1
+
+    # loop through all remaining dummypairs
     while len(dummypairs) > 0:
+
+        # recombine and add de novo mutations
         curr_postrecomb_matrix = recombine(current_gen_phase_matrix, chrom_num, num_loci, num_founders)
         curr_postdenovo_matrix,sel_coeff,chrom_num= add_denovo_hms(curr_postrecomb_matrix, sel_coeff, chrom_num, num_loci)
         newGen = [] #store kids created here
+
+        # loop through all children
         for children in currGen:
             toRemove = []
+
+            # loop through remaining dummy pairs
             for pairs in dummypairs:
+
+                # if the current child is part of a marriage pair
                 if children.get_name() in pairs:
+
+                    # find the child's partner
+                    # NOTE doesn't allow consanguineous rels. also implies that we have enough founders
                     lp = list(pairs)
                     lp.remove(children.get_name())
                     partner = lp[0]
                     partner = founderdummy_to_founder[partner]
-                    #randompersonctrprev = randompersonctr
-                    #partner, randompersonctr = generate_mate(founders_shuffled, numSNPs, randompersonctr)
-                    #if randompersonctr == randompersonctrprev:
-                        #partner = all_founders[partner]
-                        #partner.set_genotype_snps(list(recombine_founder_genotype_phase_matrix[partner.genotype,:]))
                     generationLists.append(partner)
                     print("Marriage between %s and %s" % (children.get_name(), partner.get_name()))
                     noChildren = dummypairs[pairs].get_num_children()
                     print("They will have %s children" % noChildren)
+
+                    # loop through that pair's no of children
                     for i in range(noChildren):
                         childname = dummypairs[pairs].get_children()[i]
                         child, child_gen = mating(childname, children, partner, recombine_founder_genotype_phase_matrix, curr_postdenovo_matrix)
@@ -110,8 +136,16 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
                         generationLists.append(child)
                         gen_genotypes.append(child_gen)
                     toRemove.append(pairs)
+
+            # remove the pairs we went through
             for k in toRemove: dummypairs.pop(k)
+
+        # reset currGen and make new matrix
         currGen = newGen
         current_gen_phase_matrix = np.vstack(gen_genotypes)
+
+        # reset generations' genotypes
         gen_genotypes = []
+
+    # return generation lists and new selection coefficients
     return generationLists, sel_coeff

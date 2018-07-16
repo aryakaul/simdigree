@@ -126,4 +126,8 @@ Multiple founders has been coded. I have run 100 trials on each of the pedigree 
 
 #### 2018-07-16
 
-Today I will comment EVERYTHING 
+Today I will comment EVERYTHING.
+
+In addition to commenting everything, I also fixed a piece of logic. The founder liability threshold will now be determined by the COMPLETE vcf as opposed to the subset we extracted earlier.
+
+I'm running tests to make sure this works.

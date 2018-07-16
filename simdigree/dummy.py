@@ -1,4 +1,11 @@
 class Dummy:
+
+    """
+    Class for use when given a pedigree to model.
+    I create a 'dummy' for each individual with key information about that
+    individual
+    """
+
     def __init__(self, parents, founder, children=[]):
         self.parents = parents
         self.founder = founder
@@ -22,6 +29,13 @@ class Dummy:
         self.children = copy
 
 class DummyPair:
+
+    """
+    Class for use when given a pedigree to model.
+    I create a 'DummyPair' for each married pair found in the original
+    pedigree
+    """
+
     def __init__(self, parents, children=[]):
         self.pair = parents
         self.children = children

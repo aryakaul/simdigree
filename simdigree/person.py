@@ -5,6 +5,11 @@ import random
 import sys
 
 class Person:
+
+    """
+    Class to store Person object in pedigrees
+    """
+
     def __init__(self, name, genotype=None, parents=None, childrennames=None, affected="unknown", genotype_snps=None):
         self.name = name
         self.genotype = genotype
@@ -74,6 +79,11 @@ class Person:
         self.genotype_snps = snps
 
 def mating(child_id, parent1, parent2, founder_mat, currgen_genmat):
+
+    """
+    Given the name of a child and two parents + the genotype matrices, mate them
+    """
+
     child_gen = phase_parents(parent1, parent2, founder_mat, currgen_genmat)
     parent1.add_children(child_id)
     parent2.add_children(child_id)
@@ -83,6 +93,7 @@ def mating(child_id, parent1, parent2, founder_mat, currgen_genmat):
 
 #modified from Onuralp
 def random_breaks(no_loci, coldspot=0.1):
+
     """
     Generate random breakpoints between `no_loci` unlinked loci from $Poisson(\lambda=0.20)$.
     For `coldspot` fraction of total mutational target, set $\lambda=0.02$
@@ -105,6 +116,7 @@ def random_breaks(no_loci, coldspot=0.1):
 
 #modified from Onuralp
 def designate_breakpoints(chr_index, no_loci, no_samples):
+
     """
     Generate boolean mask from chromosome index
     """
@@ -119,6 +131,7 @@ def designate_breakpoints(chr_index, no_loci, no_samples):
 
 #modified from Onuralp
 def recombine(geno_matrix, chr_index, no_loci, no_samples):
+
     """
     Recombine at randomly generated breakpoints.
     """
@@ -135,10 +148,11 @@ def recombine(geno_matrix, chr_index, no_loci, no_samples):
 
 #modified from Onuralp
 def add_denovo_hms(X, s, old_index, num_loci,gamma_shape=0.31623, gamma_scale=0.01):
-    '''
+
+    """
     Given inherited genotypes `X`, return genotype matrix with de novo mutations.
     Append selective effects of de novo mutations to the base selection vector.
-    '''
+    """
 
     U = 2.36e-08 # genome-wide mutation rate per base pair per generation
     L = 4.5e03 # mutational target size per locus (in base pairs)
@@ -148,17 +162,10 @@ def add_denovo_hms(X, s, old_index, num_loci,gamma_shape=0.31623, gamma_scale=0.
     denovo_per_sample = np.random.poisson(lam=U*L*N, size=a)
     total_num_denovo = np.sum(denovo_per_sample)
 
-    #denovo_per_sample = np.array([0,0,1,0,0,0,0,0,1,0])
-    #total_num_denovo = np.sum(denovo_per_sample)
-
     # draw selective effect for each de novo mutation from Gamma
     k, theta = gamma_shape, gamma_scale
     s_denovo = np.random.gamma(shape=k, scale=theta, size=total_num_denovo)
     s_concat = np.concatenate((s, s_denovo))
-
-    # calculate effect sizes for de novo and append
-    #b_denovo = (s_denovo ** tau) * scaling_factor
-    #b_concat = np.concatenate((b, b_denovo))
 
     # pre-allocate genotypes for de novo mutations
     X_denovo = np.tile(np.zeros(total_num_denovo), (a,1))
@@ -213,6 +220,11 @@ def phase_parents(parent1, parent2, founder_mat, currgen_mat):
     return proband
 
 def rollDie(prob, sides):
+
+    """
+    Roll a user defined sided fair die
+    """
+
     x = random.random()
     if 0<x<=prob[0]:
         return sides[0]
