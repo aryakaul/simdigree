@@ -118,4 +118,12 @@ I created the pedigree files from clinical data (not on github cause of obvious 
 #### 2018-07-12
 Added output functionality where I also output the genotype matrix and the snp effects column vector. Also patched some bugs with `pedigree` function and dealing with denovo mutations.
 
-NOW next on list is the multipple founders stuff
+NOW next on list is the multiple founders stuff
+
+#### 2018-07-13 to 2018-07-15
+
+Multiple founders has been coded. I have run 100 trials on each of the pedigree clinical cases, as well as, the pedigree structures provided before. In addition, I generated 100 novel pedigrees.
+
+#### 2018-07-16
+
+Today I will comment EVERYTHING 
