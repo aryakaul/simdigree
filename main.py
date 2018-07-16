@@ -106,7 +106,7 @@ def main():
     #### associated with the Person object created with that founder
     if args.command == "pedigree":
         subset_number = return_subset_number(args.fam)
-        print("VCF will be subsetted to this number...%s" % subset_number)
+        print("VCF will be subsetted to this number: %s" % subset_number)
     elif args.command == "generate":
         subset_number = args.founders
     else:
@@ -146,7 +146,9 @@ def main():
             if pair.get_pair() not in pairs:
                 pairs[pair.get_pair()] = pair
             else: pair = pairs[pair.get_pair()]
-            pair.children = individs[dummy.get_parents()[0]].get_children()
+            p1Children = individs[dummy.get_parents()[0]].get_children()
+            p2Children = individs[dummy.get_parents()[1]].get_children()
+            pair.children = list(set(p1Children) & set(p2Children))
         start = time.time()
         generations, selection_coeff_new = recreate_pedigree(individs, pairs, all_founders, founder_genotype_phase_matrix, args.noLoci, chrom_num, selection_coeff)
         end = time.time()
@@ -206,10 +208,18 @@ def main():
                     gt_matrix.append(snps)
                     person.ctr_liab = nonfounder_ctr
                     nonfounder_ctr += 1
+            gt_matrix_wdenovo = []
             for rows in gt_matrix:
-                while len(rows) < maxlen:
-                    np.append(rows, 0)
-            gt_matrix = np.vstack(gt_matrix)
+                diff = maxlen - len(rows)
+                if diff == 0: row = rows
+                elif diff > 0:
+                    zeros = np.zeros(diff)
+                    row = np.append(rows,zeros)
+                else:
+                    print("ERROR")
+                    sys.exit(2)
+                gt_matrix_wdenovo.append(row)
+            gt_matrix = np.vstack(gt_matrix_wdenovo)
             nonfounder_dosage = calculate_dosage_matrix(gt_matrix)
             allele_freq_nonfounder = []
             for column in nonfounder_dosage.T:

@@ -58,6 +58,7 @@ Completed the `generate` function! Output is a FAM file with information about s
 Finished the `pedigree` function! GUCCI GANG GUCCI GANG GUCCI GANG. I am currently running it on the large vcf provided by Onuralp (500 loci) and testing the generate/pedigree function.
 
 The full runall command is produced below:
+
 ```
 #!/bin/bash
 source /net/lib/python3.3/bin/activate
@@ -76,8 +77,6 @@ for FAMFILES in /net/home/akaul/projs/Simdigree/git-simdigree/tests/pedigrees/st
     echo "python $SIMDIGREE pedigree -T 500 -i $vcf -p $FAMFILES -l 0.0005 0.001 0.01 0.05 0.10 -o $output/$name" >> $jobFile
     qsub $jobFile
 done
-
-
 
 output=/net/home/akaul/projs/Simdigree/jobs-simdigree/output-simdigree/2018-07-06/GENERATE
 jobFile=/net/home/akaul/projs/Simdigree/jobs-simdigree/output-simdigree/2018-07-06/simdigree.job.generate
