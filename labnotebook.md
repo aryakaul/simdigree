@@ -131,3 +131,6 @@ Today I will comment EVERYTHING.
 In addition to commenting everything, I also fixed a piece of logic. The founder liability threshold will now be determined by the COMPLETE vcf as opposed to the subset we extracted earlier.
 
 I'm running tests to make sure this works.
+
+#### 2018-07-17
+Determining the liab. threshold from the entire founder matrix is significantly increasing the timing of my method (20min -> 2 hours) but whatcha gonna do. 
