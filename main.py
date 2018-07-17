@@ -5,7 +5,7 @@ import argparse
 import sys
 import math
 import os
-from simdigree.io import read_vcf, write_fam, read_fam, write_effect_snps, write_genotype_matrix
+from simdigree.io import read_vcf, write_fam, read_fam, write_effect_snps, write_genotype_matrix, read_vcf_founderliab
 from simdigree.generate import *
 from simdigree.pedigree import recreate_pedigree, return_subset_number
 from simdigree.person import mating
@@ -158,10 +158,6 @@ def main():
         print("Calculating all values for tau value of %s" % tauValue)
 
         #go through founders and determine the threshold for the given values 
-
-        #TODO currently the dosage threshold is determined from the founders who have been subsetted. 
-        #               Should it be the whole population?
-        # NOTE - FIXED
         start = time.time()
         founder_biggenotype_mat = read_vcf_founderliab(args.inputvcf)
         founder_dosage = calculate_dosage_matrix(founder_biggenotype_mat)
@@ -177,9 +173,9 @@ def main():
         for i in lT:
             listOfThresholds.append(np.percentile(effects_people, 100*(1-i)))
             founder_outliers.append(np.argwhere(effects_people > i))
-
         print("Looping through all liability thresholds")
         for tidx in range(len(lT)):
+            print("Number of outliers in the founder population... %s" % founder_outliers[tidx].shape[0])
 
             # create output path for diff. liab. thresholds
             outputpath = os.path.join(taupath, "lb-"+str(lT[tidx])+"/")
@@ -198,7 +194,9 @@ def main():
 
                 # if they're a founder, then their phenotype is already known!
                 if person.is_founder():
-                    if person.genotype in founder_outliers[tidx]:
+                    personName = person.get_name()
+                    founderNo = int(personName.split('i')[1])
+                    if founderNo in founder_outliers[tidx]:
                         person.set_affected(True)
                     else:
                         person.set_affected(False)
@@ -258,7 +256,8 @@ def main():
             end = time.time()
             print("Time took to calculate who is affected... %s" % (end-start))
 
-            #write three files. (1) the fam file with information about the affected status of all the individuals
+            # write three files:
+            # (1) the fam file with information about the affected status of all the individuals
             # (2) the column vector describing the effects of each SNP
             # (3) the genotype matrix describing dosage of each individual
             write_fam(generations, os.path.join(outputpath, "simdigree_out-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".fam"))

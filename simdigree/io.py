@@ -54,7 +54,7 @@ def read_vcf(path, founders_desired):
     chrom_num = df[0].values
 
     #generate random founders to subset
-    founders_to_subset=npr.randint(low=9,high=no_samples+9, size=founders_desired)
+    founders_to_subset=npr.choice(np.arange(9,no_samples+9),size=founders_desired, replace=False)
     print("Founders will be the following... %s" % founders_to_subset)
 
     # construct genotype matrix (one-hot encoding)
@@ -81,7 +81,7 @@ def read_vcf_founderliab(path):
     no_samples = df.shape[1]-9
 
     # construct genotype matrix (one-hot encoding)
-    genotypes = df.loc[:, founders_to_subset].T.values
+    genotypes = df.loc[:, 9:(no_samples+9)].T.values
     dosage = {'0|0': 0, '0|1': 1, '1|0': 2, '1|1': 3}
     geno_dosage = np.vectorize(dosage.get)(genotypes)
 
@@ -190,8 +190,10 @@ def write_genotype_matrix(generations, output):
         elif diff == 0: continue
         else:
             zeros = np.zeros(diff)
-            gen_matrix[g]=np.append(gen_matrix[g], zeros)
-            gen_matrix[g]=np.vectorize(todosage.get)(gen_matrix[g])
+            prev = gen_matrix[g]
+            new = np.append(prev, zeros)
+            newer = np.vectorize(todosage.get)(new)
+            gen_matrix[g] = newer
 
     # write the string to the file described
     with open(output, 'w') as fileout:
