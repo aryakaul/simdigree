@@ -145,8 +145,6 @@ def main():
     else:
         lT = args.liabilityThreshold
 
-
-
     #start looping over all tauValues
     for tauValue in tauValues:
 
@@ -166,13 +164,14 @@ def main():
         end = time.time()
         print("Time took to calculate liability of founders... %s" % (end-start))
 
-
         # figure out the founders who are affected at each liability threshold
         listOfThresholds = []
         founder_outliers = []
-        for i in lT:
-            listOfThresholds.append(np.percentile(effects_people, 100*(1-i)))
-            founder_outliers.append(np.argwhere(effects_people > i))
+        for i in range(len(lT)):
+            listOfThresholds.append(np.percentile(effects_people, 100*(1-lT[i])))
+            founder_outliers.append(np.argwhere(effects_people > listOfThresholds[i]))
+
+        # loop through every given liability threshold
         print("Looping through all liability thresholds")
         for tidx in range(len(lT)):
             print("Number of outliers in the founder population... %s" % founder_outliers[tidx].shape[0])
