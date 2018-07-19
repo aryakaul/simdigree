@@ -14,7 +14,7 @@ except:
 import pandas as pd
 
 #modified from Onuralp's code
-def read_vcf(path, founders_desired):
+def read_vcf(path, founders_desired, no_samples):
 
     """
     Extract selective effects and allele frequencies of causal variants from VCF generated using SLiM. Note that the
@@ -42,8 +42,11 @@ def read_vcf(path, founders_desired):
     #### associated with the Person object created with that founder
     #read in vcf file
 
-    df = pd.read_csv(path, delim_whitespace=True, header=None, comment='#', keep_default_na=False, low_memory=False, engine='c', dtype='str')
-    no_samples = df.shape[1]-9
+    founders_to_subset=npr.choice(np.arange(9,no_samples+9),size=founders_desired, replace=False)
+    print("Founders will be %s" % (founders_to_subset-9))
+    #print(founders_to_subset)
+    columns = [0,7]+list(founders_to_subset)
+    df = pd.read_csv(path, delim_whitespace=True, header=None, comment='#', keep_default_na=False, low_memory=True, engine='c', dtype='str', usecols=columns)
 
     # extract selective effects `s` and allele counts `ac`, calculate allele frequencies `x`
     sel_coeff = df[7].str.extract(r';S=(\S+);DOM', expand=False).values.astype(float)
@@ -54,8 +57,6 @@ def read_vcf(path, founders_desired):
     chrom_num = df[0].values
 
     #generate random founders to subset
-    founders_to_subset=npr.choice(np.arange(9,no_samples+9),size=founders_desired, replace=False)
-    print("Founders will be the following... %s" % founders_to_subset)
 
     # construct genotype matrix (one-hot encoding)
     genotypes = df.loc[:, founders_to_subset].T.values
@@ -65,19 +66,19 @@ def read_vcf(path, founders_desired):
     #create dictionary with everybody 
     allpeople = {}
     for i in range(len(geno_dosage)):
-        allpeople["i"+str(founders_to_subset[i])]=Person("founder-i"+str(founders_to_subset[i]), i)
+        allpeople["i"+str(founders_to_subset[i]-9)]=Person("founder-i"+str(founders_to_subset[i]-9), i)
         x = list(geno_dosage[i,:])
-        allpeople["i"+str(founders_to_subset[i])].set_genotype_snps(x)
+        allpeople["i"+str(founders_to_subset[i]-9)].set_genotype_snps(x)
 
     return geno_dosage, abs(sel_coeff), allele_freqs, chrom_num, allpeople
 
-def read_vcf_founderliab(path):
+def read_vcf_founderliab(path, no_samples):
 
     """
     Read whole vcf and return ONLY founder matrix
     """
 
-    df = pd.read_csv(path, delim_whitespace=True, header=None, comment='#', keep_default_na=False, low_memory=False, engine='c', dtype='str')
+    df = pd.read_csv(path, delim_whitespace=True, header=None, comment='#', keep_default_na=False, low_memory=False, engine='c', dtype='str', usecols=np.arange(9,no_samples))
     no_samples = df.shape[1]-9
 
     # construct genotype matrix (one-hot encoding)

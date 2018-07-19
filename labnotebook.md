@@ -133,4 +133,9 @@ In addition to commenting everything, I also fixed a piece of logic. The founder
 I'm running tests to make sure this works.
 
 #### 2018-07-17
-Determining the liab. threshold from the entire founder matrix is significantly increasing the timing of my method (20min -> 2 hours) but whatcha gonna do. 
+Determining the liab. threshold from the entire founder matrix is significantly increasing the timing of my method (20min -> 2 hours) but whatcha gonna do. I have found a bug regarding the affected status of founders and am working through it right now.
+
+#### 2018-07-19
+Fixed the bug! Running a BIG simulation right now with 100 simulations per thing running in parallel.
+
+Simulation *too* BIG! I'm working on optimizing and shuffled some stuff around. Running again.

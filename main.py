@@ -19,6 +19,7 @@ def parser_args(args):
     parser_pedigree = subparsers.add_parser('pedigree', help="Use a sample pedigree file?")
     parser_pedigree.add_argument('-i', '--inputvcf', help="Path to the vcf file being used", type=str, required=True)
     parser_pedigree.add_argument('-T', '--noLoci', help="Number of loci being used", type=int, required=True)
+    parser_pedigree.add_argument('-n', '--nosamples', help="Number of individuals in vcf being used", type=int, required=True)
     parser_pedigree.add_argument('-t', '--tau', help="Tau value for effect calculation. Default is 0.5", type=float, required=False, nargs='*')
     parser_pedigree.add_argument('-l', '--liabilityThreshold', help="Float value(s) representing the liability threshold percentage(s) being used. Default is 0.01", type=float, required=False, nargs = '*')
     parser_pedigree.add_argument('-p', '--fam', help="Path to the ped file to use", type=str, required=True)
@@ -29,6 +30,7 @@ def parser_args(args):
     parser_generate = subparsers.add_parser('generate', help="Make a fake family history")
     parser_generate.add_argument('-i', '--inputvcf', help="Path to the vcf file being used", type=str, required=True)
     parser_generate.add_argument('-T', '--noLoci', help="Number of loci being used", type=int, required=True)
+    parser_generate.add_argument('-n', '--nosamples', help="Number of individuals in vcf being used", type=int, required=True)
     parser_generate.add_argument('-f', '--founders', help="Number of founders matrix should be subsetted to. Default is 15", type=int, required=False, default=15)
     parser_generate.add_argument('-t', '--tau', help="Tau value to use for effect calculation. Default is 0.5", type=float, required=False, nargs='*')
     parser_generate.add_argument('-l', '--liabilityThreshold', help="Float value(s) representing the liability threshold percentage(s) being used. Default is 0.01", type=float, required=False, nargs = '*')
@@ -93,7 +95,7 @@ def main():
 
     #read in vcf - check io.py for more info
     start = time.time()
-    founder_genotype_phase_matrix, selection_coeff, allele_freqs, chrom_num, all_founders = read_vcf(args.inputvcf, subset_number)
+    founder_genotype_phase_matrix, selection_coeff, allele_freqs, chrom_num, all_founders = read_vcf(args.inputvcf, subset_number, args.nosamples)
     end = time.time()
     print("Time took to read in vcf file... %s" % (end-start))
 
@@ -145,6 +147,60 @@ def main():
     else:
         lT = args.liabilityThreshold
 
+    # create founder dosage matrix
+    founder_biggenotype_mat = read_vcf_founderliab(args.inputvcf, args.nosamples)
+    founder_dosage = calculate_dosage_matrix(founder_biggenotype_mat)
+
+    # write dosage matrix
+    write_genotype_matrix(generations, os.path.join(basepath, "simdigree_out-dosage"))
+
+    # create genotype matrix for all non founders in final pedigree
+    gt_matrix = []
+    maxlen = 0
+    nonfounder_ctr = 0
+    for person in generations:
+
+        #if they're not a founder...
+        if not person.is_founder():
+            # get the maxlen of the snps
+            snps = person.get_genotype_snps()
+            if len(snps) > maxlen: maxlen = len(snps)
+
+            # attach their snps to the matrix
+            gt_matrix.append(snps)
+            person.ctr_liab = nonfounder_ctr
+            nonfounder_ctr += 1
+
+    # create new gt_matrix with all genotypes filled in for non-founders to account for denovo mutations
+    gt_matrix_wdenovo = []
+    for rows in gt_matrix:
+        diff = maxlen - len(rows)
+        if diff == 0: row = rows
+        elif diff > 0:
+            zeros = np.zeros(diff)
+            row = np.append(rows,zeros)
+        else:
+            print("ERROR")
+            sys.exit(2)
+        gt_matrix_wdenovo.append(row)
+    gt_matrix = np.vstack(gt_matrix_wdenovo)
+
+    # convert this to a dosage matrix and calculate allele freq.
+    nonfounder_dosage = calculate_dosage_matrix(gt_matrix)
+    allele_freq_nonfounder = []
+    for column in nonfounder_dosage.T:
+        genotypes, freqs = (np.unique(column, return_counts = True))
+        freqdict = {}
+        for i in range(len(genotypes)): freqdict[genotypes[i]] = freqs[i]
+        if 0 not in freqdict: freqdict[0] = 0
+        if 1 not in freqdict: freqdict[1] = 0
+        if 2 not in freqdict: freqdict[2] = 0
+        allele_freq_persnp = freqdict[1]+2*freqdict[2]
+        allele_freq_persnp /= (2*(freqdict[1]+freqdict[2]+freqdict[0]))
+        allele_freq_nonfounder.append(allele_freq_persnp)
+    allele_freq_nonfounder = np.vstack(allele_freq_nonfounder)
+
+
     #start looping over all tauValues
     for tauValue in tauValues:
 
@@ -157,8 +213,6 @@ def main():
 
         #go through founders and determine the threshold for the given values 
         start = time.time()
-        founder_biggenotype_mat = read_vcf_founderliab(args.inputvcf)
-        founder_dosage = calculate_dosage_matrix(founder_biggenotype_mat)
         C = calculate_scaling_constant(selection_coeff, allele_freqs, tauValue)
         effects_people, effects_snps = calculate_liability(founder_dosage, selection_coeff, C, tauValue)
         end = time.time()
@@ -170,6 +224,13 @@ def main():
         for i in range(len(lT)):
             listOfThresholds.append(np.percentile(effects_people, 100*(1-lT[i])))
             founder_outliers.append(np.argwhere(effects_people > listOfThresholds[i]))
+
+        # calculate the non-founders who are effected per founder_derived_threshold
+        C = calculate_scaling_constant(selection_coeff, allele_freq_nonfounder, tauValue)
+        effects_nonfounders, effects_snps_wdenovo = calculate_liability(nonfounder_dosage, selection_coeff_new, C, tauValue)
+
+        # write the column vector describing the effects of each SNP
+        write_effect_snps(effects_snps_wdenovo, os.path.join(taupath, "simdigree_out-effects_snps"))
 
         # loop through every given liability threshold
         print("Looping through all liability thresholds")
@@ -185,10 +246,6 @@ def main():
             founder_derived_threshold = listOfThresholds[tidx]
             print("Founder derived threshold is... %s" % founder_derived_threshold)
 
-            # create genotype matrix from all individuals in final pedigree
-            gt_matrix = []
-            maxlen = 0
-            nonfounder_ctr = 0
             for person in generations:
 
                 # if they're a founder, then their phenotype is already known!
@@ -200,48 +257,6 @@ def main():
                     else:
                         person.set_affected(False)
 
-                #if they're not a founder...
-                else:
-                    # get the maxlen of the snps
-                    snps = person.get_genotype_snps()
-                    if len(snps) > maxlen: maxlen = len(snps)
-
-                    # attach their snps to the matrix
-                    gt_matrix.append(snps)
-                    person.ctr_liab = nonfounder_ctr
-                    nonfounder_ctr += 1
-
-            # create new gt_matrix with all genotypes filled in for non-founders to account for denovo mutations
-            gt_matrix_wdenovo = []
-            for rows in gt_matrix:
-                diff = maxlen - len(rows)
-                if diff == 0: row = rows
-                elif diff > 0:
-                    zeros = np.zeros(diff)
-                    row = np.append(rows,zeros)
-                else:
-                    print("ERROR")
-                    sys.exit(2)
-                gt_matrix_wdenovo.append(row)
-            gt_matrix = np.vstack(gt_matrix_wdenovo)
-
-            # convert this to a dosage matrix and calculate allele freq.
-            nonfounder_dosage = calculate_dosage_matrix(gt_matrix)
-            allele_freq_nonfounder = []
-            for column in nonfounder_dosage.T:
-                genotypes, freqs = (np.unique(column, return_counts = True))
-                freqdict = {}
-                for i in range(len(genotypes)): freqdict[genotypes[i]] = freqs[i]
-                if 0 not in freqdict: freqdict[0] = 0
-                if 1 not in freqdict: freqdict[1] = 0
-                if 2 not in freqdict: freqdict[2] = 0
-                allele_freq_persnp = freqdict[1]+2*freqdict[2]
-                allele_freq_persnp /= (2*(freqdict[1]+freqdict[2]+freqdict[0]))
-                allele_freq_nonfounder.append(allele_freq_persnp)
-            allele_freq_nonfounder = np.vstack(allele_freq_nonfounder)
-            # calculate the non-founders who are effected per founder_derived_threshold
-            C = calculate_scaling_constant(selection_coeff, allele_freq_nonfounder, tauValue)
-            effects_nonfounders, effects_snps_wdenovo = calculate_liability(nonfounder_dosage, selection_coeff_new, C, tauValue)
             nonfounder_outliers = np.argwhere(effects_nonfounders > founder_derived_threshold)
 
             #set affected status
@@ -255,13 +270,9 @@ def main():
             end = time.time()
             print("Time took to calculate who is affected... %s" % (end-start))
 
-            # write three files:
-            # (1) the fam file with information about the affected status of all the individuals
-            # (2) the column vector describing the effects of each SNP
-            # (3) the genotype matrix describing dosage of each individual
+            # write the fam file with information about the affected status of all the individuals
             write_fam(generations, os.path.join(outputpath, "simdigree_out-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".fam"))
-            write_effect_snps(effects_snps_wdenovo, os.path.join(outputpath, "simdigree_out-effects_snps"))
-            write_genotype_matrix(generations, os.path.join(outputpath, "simdigree_out-dosage"))
+
         endbig = time.time()
         print("Time to calculate given tau value was %s" % (endbig-startbig))
 
