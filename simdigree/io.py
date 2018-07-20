@@ -12,6 +12,7 @@ try:
 except:
     from .dummy import Dummy
 import pandas as pd
+import allel
 
 #modified from Onuralp's code
 def read_vcf(path, founders_desired, no_samples):
@@ -72,21 +73,20 @@ def read_vcf(path, founders_desired, no_samples):
 
     return geno_dosage, abs(sel_coeff), allele_freqs, chrom_num, allpeople
 
-def read_vcf_founderliab(path, no_samples):
+def read_vcf_founderliab(path):
 
     """
     Read whole vcf and return ONLY founder matrix
     """
 
-    df = pd.read_csv(path, delim_whitespace=True, header=None, comment='#', keep_default_na=False, low_memory=False, engine='c', dtype='str', usecols=np.arange(9,no_samples))
-    no_samples = df.shape[1]-9
-
+    geno_dosage = allel.GenotypeArray(allel.read_vcf(path, fields=['calldata/GT'])['calldata/GT']).to_n_alt().T
+    #print(df['variants/CHROM'])
     # construct genotype matrix (one-hot encoding)
-    genotypes = df.loc[:, 9:(no_samples+9)].T.values
-    dosage = {'0|0': 0, '0|1': 1, '1|0': 2, '1|1': 3}
-    geno_dosage = np.vectorize(dosage.get)(genotypes)
-
-    return geno_dosage
+    #genotypes = (df.T)
+    #dosage = {'0|0': 0, '0|1': 1, '1|0': 2, '1|1': 3}
+    #geno_dosage = np.vectorize(dosage.get)(genotypes)
+    #print(geno_dosage)
+    return np.vstack(geno_dosage)
 
 def write_fam(listofpeople, outfile):
 

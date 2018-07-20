@@ -139,3 +139,14 @@ Determining the liab. threshold from the entire founder matrix is significantly 
 Fixed the bug! Running a BIG simulation right now with 100 simulations per thing running in parallel.
 
 Simulation *too* BIG! I'm working on optimizing and shuffled some stuff around. Running again.
+
+#### 2018-07-20
+I've refactored the code and am now using the scikit-allel package to significantly speed up everything. Runtime is now between 2-5 minutes. I'm running 10 trials of it now.
+
+Also worth noting that to work with scikit-allel, I need to preprocess the vcf file and remove spaces and replace them with tabs. This may be done with the following:
+
+```
+cat $VCF | tr -s " " | tr " " "\t" > new.vcf
+```
+
+

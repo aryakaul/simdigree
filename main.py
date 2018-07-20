@@ -97,7 +97,7 @@ def main():
     start = time.time()
     founder_genotype_phase_matrix, selection_coeff, allele_freqs, chrom_num, all_founders = read_vcf(args.inputvcf, subset_number, args.nosamples)
     end = time.time()
-    print("Time took to read in vcf file... %s" % (end-start))
+    print("Time took to read in vcf file: %s" % (end-start))
 
     #create output folder if it doesn't exist
     if not os.path.exists(args.output):
@@ -111,7 +111,7 @@ def main():
         start = time.time()
         generations, selection_coeff_new = generate_pedigree(founder_genotype_phase_matrix, args.reproduction, args.generation, args.marriagerate, all_founders, chrom_num, args.noLoci, selection_coeff)
         end = time.time()
-        print("Time took to generate pedigree... %s" % (end-start))
+        print("Time took to generate pedigree: %s" % (end-start))
 
     elif args.command=="pedigree":
 
@@ -134,7 +134,7 @@ def main():
         start = time.time()
         generations, selection_coeff_new = recreate_pedigree(individs, pairs, all_founders, founder_genotype_phase_matrix, args.noLoci, chrom_num, selection_coeff)
         end = time.time()
-        print("Time took to model pedigree... %s" % (end-start))
+        print("Time took to model pedigree: %s" % (end-start))
 
     #set default tauValues and liabilityThreshold values to loop through
     if args.tau is None:
@@ -148,12 +148,15 @@ def main():
         lT = args.liabilityThreshold
 
     # create founder dosage matrix
-    founder_biggenotype_mat = read_vcf_founderliab(args.inputvcf, args.nosamples)
-    founder_dosage = calculate_dosage_matrix(founder_biggenotype_mat)
+    start = time.time()
+    founder_dosage = read_vcf_founderliab(args.inputvcf)
+    end = time.time()
+    print("Time took to get big dosage: %s" % (end-start))
 
     # write dosage matrix
     write_genotype_matrix(generations, os.path.join(basepath, "simdigree_out-dosage"))
 
+    start = time.time()
     # create genotype matrix for all non founders in final pedigree
     gt_matrix = []
     maxlen = 0
@@ -199,6 +202,8 @@ def main():
         allele_freq_persnp /= (2*(freqdict[1]+freqdict[2]+freqdict[0]))
         allele_freq_nonfounder.append(allele_freq_persnp)
     allele_freq_nonfounder = np.vstack(allele_freq_nonfounder)
+    end = time.time()
+    print("Time took to get non-founder dosage + allele freqs: %s" % (end-start))
 
 
     #start looping over all tauValues
@@ -216,7 +221,7 @@ def main():
         C = calculate_scaling_constant(selection_coeff, allele_freqs, tauValue)
         effects_people, effects_snps = calculate_liability(founder_dosage, selection_coeff, C, tauValue)
         end = time.time()
-        print("Time took to calculate liability of founders... %s" % (end-start))
+        print("Time took to calculate liability of founders: %s" % (end-start))
 
         # figure out the founders who are affected at each liability threshold
         listOfThresholds = []
@@ -226,8 +231,11 @@ def main():
             founder_outliers.append(np.argwhere(effects_people > listOfThresholds[i]))
 
         # calculate the non-founders who are effected per founder_derived_threshold
+        start = time.time()
         C = calculate_scaling_constant(selection_coeff, allele_freq_nonfounder, tauValue)
         effects_nonfounders, effects_snps_wdenovo = calculate_liability(nonfounder_dosage, selection_coeff_new, C, tauValue)
+        end = time.time()
+        print("Time took to calculate liability of non-founders: %s" % (end-start))
 
         # write the column vector describing the effects of each SNP
         write_effect_snps(effects_snps_wdenovo, os.path.join(taupath, "simdigree_out-effects_snps"))
@@ -235,7 +243,6 @@ def main():
         # loop through every given liability threshold
         print("Looping through all liability thresholds")
         for tidx in range(len(lT)):
-            print("Number of outliers in the founder population... %s" % founder_outliers[tidx].shape[0])
 
             # create output path for diff. liab. thresholds
             outputpath = os.path.join(taupath, "lb-"+str(lT[tidx])+"/")
@@ -243,6 +250,7 @@ def main():
                 os.makedirs(outputpath)
             print("On liability threshold of %s" % lT[tidx])
             start = time.time()
+            print("Number of outliers in the founder population... %s" % founder_outliers[tidx].shape[0])
             founder_derived_threshold = listOfThresholds[tidx]
             print("Founder derived threshold is... %s" % founder_derived_threshold)
 
@@ -268,15 +276,15 @@ def main():
                 else:
                     people.set_affected(True)
             end = time.time()
-            print("Time took to calculate who is affected... %s" % (end-start))
+            #print("Time took to calculate who is affected: %s" % (end-start))
 
             # write the fam file with information about the affected status of all the individuals
             write_fam(generations, os.path.join(outputpath, "simdigree_out-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".fam"))
 
         endbig = time.time()
-        print("Time to calculate given tau value was %s" % (endbig-startbig))
+        print("Time to calculate given tau value was: %s" % (endbig-startbig))
 
     endTHUGE = time.time()
-    print("TOTAL TIME TOOK... %s" % (endTHUGE-startTHUGE))
+    print("Total time took: %s" % (endTHUGE-startTHUGE))
 if __name__ == "__main__":
     main()
