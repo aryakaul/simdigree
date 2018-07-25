@@ -249,7 +249,6 @@ def main():
             if not os.path.exists(outputpath):
                 os.makedirs(outputpath)
             print("On liability threshold of %s" % lT[tidx])
-            start = time.time()
             print("Number of outliers in the founder population... %s" % founder_outliers[tidx].shape[0])
             founder_derived_threshold = listOfThresholds[tidx]
             print("Founder derived threshold is... %s" % founder_derived_threshold)
@@ -275,8 +274,6 @@ def main():
                     people.set_affected(False)
                 else:
                     people.set_affected(True)
-            end = time.time()
-            #print("Time took to calculate who is affected: %s" % (end-start))
 
             # write the fam file with information about the affected status of all the individuals
             write_fam(generations, os.path.join(outputpath, "simdigree_out-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".fam"))

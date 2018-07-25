@@ -149,4 +149,14 @@ Also worth noting that to work with scikit-allel, I need to preprocess the vcf f
 cat $VCF | tr -s " " | tr " " "\t" > new.vcf
 ```
 
+#### 2018-07-23
+So runtime is actually not 2-5 minutes. If your job has the unfortunate consequence of landing on a slow compute cluster it can take as long as 25 minutes, and if you get a fast one then it's ~3 minutes. I've identified the 3 slowest segments of the code to be the following:
+1. Reading in the VCF to account for the large dosage matrix across all founders (~44% of runtime)
+2. Calculating the liability of non-founders (~35% of runtime)
+3. Calculating the liability of founders (~20% of runtime)
 
+I ran 10,000 simulations on one family.
+
+##### 2018-07-24
+
+I ran (am running) 10,000 simulations on the other family.
