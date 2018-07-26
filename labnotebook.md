@@ -158,5 +158,7 @@ So runtime is actually not 2-5 minutes. If your job has the unfortunate conseque
 I ran 10,000 simulations on one family.
 
 ##### 2018-07-24
-
 I ran (am running) 10,000 simulations on the other family.
+
+##### 2018-07-26
+Yesterday I ran 10,000 simulations on the different pedigree structures.
