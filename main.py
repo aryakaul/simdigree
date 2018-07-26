@@ -53,6 +53,7 @@ def calculate_dosage_matrix(founder_genotype_phase_matrix):
     for k, v in doses.items(): x[founder_genotype_phase_matrix==k] = v
     return x
 
+#@profile
 def calculate_scaling_constant(s, maf, tau, h2=0.5):
 
     """
@@ -66,6 +67,7 @@ def calculate_scaling_constant(s, maf, tau, h2=0.5):
         C = 1
     return C
 
+#@profile
 def calculate_liability(X, s, C, tau, h2=0.5):
 
     """
