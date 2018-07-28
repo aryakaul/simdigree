@@ -176,9 +176,9 @@ def write_genotype_matrix(generations, output):
     gen_matrix = {}
     todosage = {0:0, 1:1, 2:2, 3:2} # dictionary to convert to dosage matrix
     for i in generations: gen_matrix[i.get_name()] = i.get_genotype_snps()
-    max_len = 0
 
     # find maximum length of snps
+    max_len = 0
     for g in gen_matrix:
         if len(gen_matrix[g]) > max_len: max_len = len(gen_matrix[g])
 
@@ -188,7 +188,10 @@ def write_genotype_matrix(generations, output):
         if diff < 0:
             print("error diff = %s" % diff)
             sys.exit(2)
-        elif diff == 0: continue
+        elif diff == 0:
+            prev = gen_matrix[g]
+            new = np.vectorize(todosage.get)(prev)
+            gen_matrix[g] = new
         else:
             zeros = np.zeros(diff)
             prev = gen_matrix[g]

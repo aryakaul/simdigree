@@ -165,3 +165,6 @@ Yesterday I ran 10,000 simulations on the different pedigree structures.
 
 ##### 2018-07-27
 Okey dokey so all of the simulations are complete. I am now running a job searching each of the outputted simdigree simulations to find the simulations that resulted in affected individuals who are not founders.
+
+##### 2018-07-28
+NO NONFOUNDERS ARE AFFECTED?!?!?!?!? WHAAAAA. I've slapped in some debug statements and have also fixed a bug with writing the genotype matrix. I don't see an obvious reason for the issue, hopefully ***based Onuralp*** can save me now.

@@ -192,6 +192,9 @@ def main():
 
     # convert this to a dosage matrix and calculate allele freq.
     nonfounder_dosage = calculate_dosage_matrix(gt_matrix)
+    #print(nonfounder_dosage)
+    #print(nonfounder_dosage.shape)
+
     allele_freq_nonfounder = []
     for column in nonfounder_dosage.T:
         genotypes, freqs = (np.unique(column, return_counts = True))
@@ -236,6 +239,10 @@ def main():
         start = time.time()
         C = calculate_scaling_constant(selection_coeff, allele_freq_nonfounder, tauValue)
         effects_nonfounders, effects_snps_wdenovo = calculate_liability(nonfounder_dosage, selection_coeff_new, C, tauValue)
+        #print(effects_nonfounders.shape)
+        #print(effects_nonfounders)
+        #print(effects_snps_wdenovo.shape)
+        #print(effects_snps_wdenovo)
         end = time.time()
         print("Time took to calculate liability of non-founders: %s" % (end-start))
 
@@ -255,6 +262,12 @@ def main():
             founder_derived_threshold = listOfThresholds[tidx]
             print("Founder derived threshold is... %s" % founder_derived_threshold)
 
+            # Determine the affected status of non-founders
+            nonfounder_outliers = np.argwhere(effects_nonfounders > founder_derived_threshold)
+            #nonfounder_outliers = np.argwhere(effects_nonfounders > 0)
+            print("Nonfounder outliers are...")
+            print(nonfounder_outliers)
+
             for person in generations:
 
                 # if they're a founder, then their phenotype is already known!
@@ -266,16 +279,13 @@ def main():
                     else:
                         person.set_affected(False)
 
-            nonfounder_outliers = np.argwhere(effects_nonfounders > founder_derived_threshold)
-
-            #set affected status
-            for people in generations:
-                if people.is_founder(): continue
-                pos = people.ctr_liab
-                if pos not in nonfounder_outliers or len(nonfounder_outliers)==0:
-                    people.set_affected(False)
+                # if they're not a founder cross reference it with other outliers
                 else:
-                    people.set_affected(True)
+                    pos = person.ctr_liab
+                    if pos not in nonfounder_outliers or len(nonfounder_outliers)==0:
+                        person.set_affected(False)
+                    else:
+                        person.set_affected(True)
 
             # write the fam file with information about the affected status of all the individuals
             write_fam(generations, os.path.join(outputpath, "simdigree_out-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".fam"))
