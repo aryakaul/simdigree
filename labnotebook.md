@@ -162,3 +162,6 @@ I ran (am running) 10,000 simulations on the other family.
 
 ##### 2018-07-26
 Yesterday I ran 10,000 simulations on the different pedigree structures.
+
+##### 2018-07-27
+Okey dokey so all of the simulations are complete. I am now running a job searching each of the outputted simdigree simulations to find the simulations that resulted in affected individuals who are not founders.
