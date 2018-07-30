@@ -168,3 +168,7 @@ Okey dokey so all of the simulations are complete. I am now running a job search
 
 ##### 2018-07-28
 NO NONFOUNDERS ARE AFFECTED?!?!?!?!? WHAAAAA. I've slapped in some debug statements and have also fixed a bug with writing the genotype matrix. I don't see an obvious reason for the issue, hopefully ***based Onuralp*** can save me now.
+
+##### 2018-07-30 
+Think the problem has been identified? It is probably because I'm calculating the allele frequency for the non-founders using only the non-founders and updating the scaling constant incorrectly. When I try to use the scaling constant as defined by the founders tons of individuals are designated as affected.
+

@@ -195,6 +195,7 @@ def main():
     #print(nonfounder_dosage)
     #print(nonfounder_dosage.shape)
 
+    """
     allele_freq_nonfounder = []
     for column in nonfounder_dosage.T:
         genotypes, freqs = (np.unique(column, return_counts = True))
@@ -207,6 +208,7 @@ def main():
         allele_freq_persnp /= (2*(freqdict[1]+freqdict[2]+freqdict[0]))
         allele_freq_nonfounder.append(allele_freq_persnp)
     allele_freq_nonfounder = np.vstack(allele_freq_nonfounder)
+    """
     end = time.time()
     print("Time took to get non-founder dosage + allele freqs: %s" % (end-start))
 
@@ -224,6 +226,7 @@ def main():
         #go through founders and determine the threshold for the given values 
         start = time.time()
         C = calculate_scaling_constant(selection_coeff, allele_freqs, tauValue)
+        print("C for founders = %s" % C)
         effects_people, effects_snps = calculate_liability(founder_dosage, selection_coeff, C, tauValue)
         end = time.time()
         print("Time took to calculate liability of founders: %s" % (end-start))
@@ -237,10 +240,12 @@ def main():
 
         # calculate the non-founders who are effected per founder_derived_threshold
         start = time.time()
-        C = calculate_scaling_constant(selection_coeff, allele_freq_nonfounder, tauValue)
+        #C = calculate_scaling_constant(selection_coeff, allele_freq_nonfounder, tauValue)
+        #print("C for non-founders = %s" % C)
         effects_nonfounders, effects_snps_wdenovo = calculate_liability(nonfounder_dosage, selection_coeff_new, C, tauValue)
+        print(np.sum(selection_coeff != selection_coeff_new))
         #print(effects_nonfounders.shape)
-        #print(effects_nonfounders)
+        print(effects_nonfounders)
         #print(effects_snps_wdenovo.shape)
         #print(effects_snps_wdenovo)
         end = time.time()
