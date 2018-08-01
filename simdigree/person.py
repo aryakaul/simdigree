@@ -30,7 +30,7 @@ class Person:
     def get_genotype(self, founder_genotype_matrix, curr_gen_genotype_matrix):
         genidx = self.genotype
         if self.is_founder(): return list(founder_genotype_matrix[genidx,:])
-        elif self.is_random(): return self.get_genotype_snps()
+        #elif self.is_random(): return self.get_genotype_snps()
         else: return list(curr_gen_genotype_matrix[genidx,:])
 
     def get_genotype_GTMATRIX(self, GT_MATRIX):

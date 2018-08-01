@@ -48,7 +48,7 @@ def calculate_dosage_matrix(founder_genotype_phase_matrix):
     1: Heterozygous, 2: Homozygous alternate)
     """
 
-    doses = {0:0, 1:1, 2:2, 3:2}
+    doses = {0:0, 1:1, 2:1, 3:2}
     x = np.copy(founder_genotype_phase_matrix)
     for k, v in doses.items(): x[founder_genotype_phase_matrix==k] = v
     return x
@@ -135,6 +135,8 @@ def main():
         #check pedigree.py for more info.
         start = time.time()
         generations, selection_coeff_new, GT_MATRIX = recreate_pedigree(individs, pairs, all_founders, founder_genotype_phase_matrix, args.noLoci, chrom_num, selection_coeff)
+        numdenovo = GT_MATRIX.shape[1] - founder_genotype_phase_matrix.shape[1]
+        print("Number of denovo mutations added is %s" % (numdenovo))
         end = time.time()
         print("Time took to model pedigree: %s" % (end-start))
 
@@ -210,12 +212,13 @@ def main():
             # Determine the affected status of non-founders
             OUTLIERS = np.argwhere(EFFECTS_GEN > founder_derived_threshold)
             print("Number of affected in pedigree is %s out of %s" % (len(OUTLIERS), len(EFFECTS_GEN)))
-            print(EFFECTS_GEN)
 
             for person in generations:
                 index = person.gt_matrix_ctr
                 if index not in OUTLIERS: person.set_affected(False)
-                else: person.set_affected(True)
+                else:
+                    print(person.get_name())
+                    person.set_affected(True)
 
             # write the fam file with information about the affected status of all the individuals
             write_fam(generations, os.path.join(outputpath, "simdigree_out-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".fam"))

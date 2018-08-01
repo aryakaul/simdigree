@@ -65,7 +65,7 @@ def read_vcf(path, founders_desired, no_samples):
     allpeople = {}
     for i in range(len(geno_phase)):
         allpeople["i"+str(founders_to_subset[i]-9)]=Person("founder-i"+str(founders_to_subset[i]-9), i)
-        x = list(geno_phase[i,:])
+        #x = list(geno_phase[i,:])
         #allpeople["i"+str(founders_to_subset[i]-9)].set_genotype_snps(x)
 
     return geno_phase, abs(sel_coeff), allele_freqs, chrom_num, allpeople

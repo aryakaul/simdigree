@@ -125,25 +125,31 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
                     noChildren = dummypairs[pairs].get_num_children()
                     print("They will have %s children" % noChildren)
 
+                    CURR_GT_MATRIX = []
                     # Do recombination for this pair
                     RECOMBINED_GT_MATRIX = recombine(GT_MATRIX, chrom_num, num_loci)
-                    DENOVO_GT_MATRIX,sel_coeff,chrom_num=add_denovo_hms(RECOMBINED_GT_MATRIX, sel_coeff, chrom_num, num_loci)
                     # loop through that pair's no of children
                     for i in range(noChildren):
                         childname = dummypairs[pairs].get_children()[i]
-                        child, child_gen = mating(childname, children, partner, DENOVO_GT_MATRIX)
+                        child, child_gen = mating(childname, children, partner, RECOMBINED_GT_MATRIX)
                         print("%s created" % (child.get_name()))
                         newGen.append(child)
                         generationLists.append(child)
-                        DENOVO_GT_MATRIX = np.vstack((DENOVO_GT_MATRIX, child_gen))
+                        CURR_GT_MATRIX.append(child_gen)
                         child.gt_matrix_ctr = gt_matrix_ctr
                         gt_matrix_ctr+=1
+                    CURR_GT_MATRIX = np.vstack(CURR_GT_MATRIX)
+                    DENOVO_CURR_GT_MATRIX,sel_coeff,chrom_num=add_denovo_hms(CURR_GT_MATRIX, sel_coeff, chrom_num, num_loci)
+                    numdenovo = DENOVO_CURR_GT_MATRIX.shape[1]-RECOMBINED_GT_MATRIX.shape[1]
+                    if numdenovo != 0:
+                        zero_col = np.zeros((RECOMBINED_GT_MATRIX.shape[0], numdenovo))
+                        RECOMBINED_GT_MATRIX = np.hstack((RECOMBINED_GT_MATRIX, zero_col))
+                    RECOMBINED_GT_MATRIX = np.vstack((RECOMBINED_GT_MATRIX, DENOVO_CURR_GT_MATRIX))
 
                     toRemove.append(pairs)
-
                     # reset currGen
                     currGen = newGen
-                    GT_MATRIX = DENOVO_GT_MATRIX
+                    GT_MATRIX = RECOMBINED_GT_MATRIX
 
             # remove the pairs we went through
             for k in toRemove: dummypairs.pop(k)
