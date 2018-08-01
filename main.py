@@ -134,7 +134,7 @@ def main():
 
         #check pedigree.py for more info.
         start = time.time()
-        generations, selection_coeff_new = recreate_pedigree(individs, pairs, all_founders, founder_genotype_phase_matrix, args.noLoci, chrom_num, selection_coeff)
+        generations, selection_coeff_new, GT_MATRIX = recreate_pedigree(individs, pairs, all_founders, founder_genotype_phase_matrix, args.noLoci, chrom_num, selection_coeff)
         end = time.time()
         print("Time took to model pedigree: %s" % (end-start))
 
@@ -155,64 +155,11 @@ def main():
     end = time.time()
     print("Time took to get big dosage: %s" % (end-start))
 
-    # write dosage matrix
-    write_genotype_matrix(generations, os.path.join(basepath, "simdigree_out-dosage"))
+    # create and write dosage matrix
+    GEN_DOSAGE_MATRIX = calculate_dosage_matrix(GT_MATRIX)
+    write_genotype_matrix(generations, GEN_DOSAGE_MATRIX, os.path.join(basepath, "simdigree_out-dosage"))
 
     start = time.time()
-    # create genotype matrix for all non founders in final pedigree
-    gt_matrix = []
-    maxlen = 0
-    nonfounder_ctr = 0
-    for person in generations:
-
-        #if they're not a founder...
-        if not person.is_founder():
-            # get the maxlen of the snps
-            snps = person.get_genotype_snps()
-            if len(snps) > maxlen: maxlen = len(snps)
-
-            # attach their snps to the matrix
-            gt_matrix.append(snps)
-            person.ctr_liab = nonfounder_ctr
-            nonfounder_ctr += 1
-
-    # create new gt_matrix with all genotypes filled in for non-founders to account for denovo mutations
-    gt_matrix_wdenovo = []
-    for rows in gt_matrix:
-        diff = maxlen - len(rows)
-        if diff == 0: row = rows
-        elif diff > 0:
-            zeros = np.zeros(diff)
-            row = np.append(rows,zeros)
-        else:
-            print("ERROR")
-            sys.exit(2)
-        gt_matrix_wdenovo.append(row)
-    gt_matrix = np.vstack(gt_matrix_wdenovo)
-
-    # convert this to a dosage matrix and calculate allele freq.
-    nonfounder_dosage = calculate_dosage_matrix(gt_matrix)
-    #print(nonfounder_dosage)
-    #print(nonfounder_dosage.shape)
-
-    """
-    allele_freq_nonfounder = []
-    for column in nonfounder_dosage.T:
-        genotypes, freqs = (np.unique(column, return_counts = True))
-        freqdict = {}
-        for i in range(len(genotypes)): freqdict[genotypes[i]] = freqs[i]
-        if 0 not in freqdict: freqdict[0] = 0
-        if 1 not in freqdict: freqdict[1] = 0
-        if 2 not in freqdict: freqdict[2] = 0
-        allele_freq_persnp = freqdict[1]+2*freqdict[2]
-        allele_freq_persnp /= (2*(freqdict[1]+freqdict[2]+freqdict[0]))
-        allele_freq_nonfounder.append(allele_freq_persnp)
-    allele_freq_nonfounder = np.vstack(allele_freq_nonfounder)
-    """
-    end = time.time()
-    print("Time took to get non-founder dosage + allele freqs: %s" % (end-start))
-
-
     #start looping over all tauValues
     for tauValue in tauValues:
 
@@ -223,13 +170,13 @@ def main():
         startbig = time.time()
         print("Calculating all values for tau value of %s" % tauValue)
 
-        #go through founders and determine the threshold for the given values 
+        #go through founders and determine the threshold and scaling constant for the given tau value
         start = time.time()
         C = calculate_scaling_constant(selection_coeff, allele_freqs, tauValue)
         print("C for founders = %s" % C)
         effects_people, effects_snps = calculate_liability(founder_dosage, selection_coeff, C, tauValue)
         end = time.time()
-        print("Time took to calculate liability of founders: %s" % (end-start))
+        print("Time took to calculate liability of founders at this tau: %s" % (end-start))
 
         # figure out the founders who are affected at each liability threshold
         listOfThresholds = []
@@ -240,19 +187,12 @@ def main():
 
         # calculate the non-founders who are effected per founder_derived_threshold
         start = time.time()
-        #C = calculate_scaling_constant(selection_coeff, allele_freq_nonfounder, tauValue)
-        #print("C for non-founders = %s" % C)
-        effects_nonfounders, effects_snps_wdenovo = calculate_liability(nonfounder_dosage, selection_coeff_new, C, tauValue)
-        print(np.sum(selection_coeff != selection_coeff_new))
-        #print(effects_nonfounders.shape)
-        print(effects_nonfounders)
-        #print(effects_snps_wdenovo.shape)
-        #print(effects_snps_wdenovo)
+        EFFECTS_GEN, EFFECTS_SNPS_GEN = calculate_liability(GEN_DOSAGE_MATRIX, selection_coeff_new, C, tauValue)
         end = time.time()
-        print("Time took to calculate liability of non-founders: %s" % (end-start))
+        print("Time took to calculate liability of simulated pedigree: %s" % (end-start))
 
         # write the column vector describing the effects of each SNP
-        write_effect_snps(effects_snps_wdenovo, os.path.join(taupath, "simdigree_out-effects_snps"))
+        write_effect_snps(EFFECTS_SNPS_GEN, os.path.join(taupath, "simdigree_out-effects_snps"))
 
         # loop through every given liability threshold
         print("Looping through all liability thresholds")
@@ -260,37 +200,22 @@ def main():
 
             # create output path for diff. liab. thresholds
             outputpath = os.path.join(taupath, "lb-"+str(lT[tidx])+"/")
-            if not os.path.exists(outputpath):
-                os.makedirs(outputpath)
+            if not os.path.exists(outputpath): os.makedirs(outputpath)
+
             print("On liability threshold of %s" % lT[tidx])
             print("Number of outliers in the founder population... %s" % founder_outliers[tidx].shape[0])
             founder_derived_threshold = listOfThresholds[tidx]
             print("Founder derived threshold is... %s" % founder_derived_threshold)
 
             # Determine the affected status of non-founders
-            nonfounder_outliers = np.argwhere(effects_nonfounders > founder_derived_threshold)
-            #nonfounder_outliers = np.argwhere(effects_nonfounders > 0)
-            print("Nonfounder outliers are...")
-            print(nonfounder_outliers)
+            OUTLIERS = np.argwhere(EFFECTS_GEN > founder_derived_threshold)
+            print("Number of affected in pedigree is %s out of %s" % (len(OUTLIERS), len(EFFECTS_GEN)))
+            print(EFFECTS_GEN)
 
             for person in generations:
-
-                # if they're a founder, then their phenotype is already known!
-                if person.is_founder():
-                    personName = person.get_name()
-                    founderNo = int(personName.split('i')[1])
-                    if founderNo in founder_outliers[tidx]:
-                        person.set_affected(True)
-                    else:
-                        person.set_affected(False)
-
-                # if they're not a founder cross reference it with other outliers
-                else:
-                    pos = person.ctr_liab
-                    if pos not in nonfounder_outliers or len(nonfounder_outliers)==0:
-                        person.set_affected(False)
-                    else:
-                        person.set_affected(True)
+                index = person.gt_matrix_ctr
+                if index not in OUTLIERS: person.set_affected(False)
+                else: person.set_affected(True)
 
             # write the fam file with information about the affected status of all the individuals
             write_fam(generations, os.path.join(outputpath, "simdigree_out-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".fam"))

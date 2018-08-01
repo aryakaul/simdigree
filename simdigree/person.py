@@ -33,6 +33,10 @@ class Person:
         elif self.is_random(): return self.get_genotype_snps()
         else: return list(curr_gen_genotype_matrix[genidx,:])
 
+    def get_genotype_GTMATRIX(self, GT_MATRIX):
+        genidx = self.gt_matrix_ctr
+        return (GT_MATRIX[genidx,:])
+
     def get_parents(self):
         if self.parents:
             return self.parents
@@ -55,7 +59,7 @@ class Person:
             return "unknown"
 
     def get_genotype_snps(self):
-        return self.genotype_snps
+        return list(self.genotype_snps)
 
     def set_parents(self, parent1id, parent2id):
         self.parents = (parent1id, parent2id)
@@ -78,13 +82,13 @@ class Person:
     def set_genotype_snps(self, snps):
         self.genotype_snps = snps
 
-def mating(child_id, parent1, parent2, founder_mat, currgen_genmat):
+def mating(child_id, parent1, parent2, gt_matrix):
 
     """
     Given the name of a child and two parents + the genotype matrices, mate them
     """
 
-    child_gen = phase_parents(parent1, parent2, founder_mat, currgen_genmat)
+    child_gen = phase_parents(parent1, parent2, gt_matrix)
     parent1.add_children(child_id)
     parent2.add_children(child_id)
     child = Person(child_id)
@@ -130,13 +134,16 @@ def designate_breakpoints(chr_index, no_loci, no_samples):
     return mask, bp_list
 
 #modified from Onuralp
-def recombine(geno_matrix, chr_index, no_loci, no_samples):
+def recombine(geno_matrix, chr_index, no_loci): #, no_samples):
 
     """
     Recombine at randomly generated breakpoints.
     """
     recomb = {0: 0, 1: 2, 2: 1, 3: 3} # '0|1' <-> '1|0'
+    no_samples = geno_matrix.shape[0]
+    #print(no_samples)
     masked, bp_list = designate_breakpoints(chr_index, no_loci, no_samples)
+    #masked, bp_list = designate_breakpoints(chr_index, no_loci, no_samples)
     z = np.copy(geno_matrix)
     if np.asarray(bp_list).size > 0:
         # this would modify the original geno_matrix too! Work with copy!
@@ -189,19 +196,18 @@ def add_denovo_hms(X, s, old_index, num_loci,gamma_shape=0.31623, gamma_scale=0.
     return X_concat, s_concat, new_index #, b_concat
 
 #modified from Onuralp
-def phase_parents(parent1, parent2, founder_mat, currgen_mat):
+def phase_parents(parent1, parent2, gt_matrix):
 
     """
     Randomly sample gametes from each parent and generate offspring
     genotypes.
     """
 
-    ## in case one has denovo mutations. the length of their genotypes will be different. 
-    ## if this is the case, add zeros to one st. it goes 
-    pt1 = parent1.get_genotype(founder_mat, currgen_mat)
-    pt2 = parent2.get_genotype(founder_mat, currgen_mat)
-    parent1 = list(pt1)
-    parent2 = list(pt2)
+    parent1 = parent1.get_genotype_GTMATRIX(gt_matrix)
+    parent2 = parent2.get_genotype_GTMATRIX(gt_matrix)
+    #parent1 = list(pt1)
+    #parent2 = list(pt2)
+    """
     if len(parent1) > len(parent2):
         diff = len(parent1)-len(parent2)
         zero = np.zeros(diff)
@@ -210,7 +216,7 @@ def phase_parents(parent1, parent2, founder_mat, currgen_mat):
         diff = len(parent2)-len(parent1)
         zero = np.zeros(diff)
         parent1 = np.append(parent1, zero)
-
+    """
     gt = {0: [0, 0], 1: [0, 1], 2: [1, 0], 3: [1, 1]}
     a, b = np.random.randint(low=0, high=2, size=2)
     p1 = np.array([gt[x][a] for x in parent1])

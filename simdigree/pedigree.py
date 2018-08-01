@@ -31,6 +31,9 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
     Given a variety of inputs recreate the pedigree
     """
 
+    #pedigree genotype matrix
+    GT_MATRIX = []
+
     #list that will store all the people created
     generationLists = []
 
@@ -39,7 +42,8 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
     num_founders = len(all_founders)
     numSNPs = founder_genotype_phase_matrix.shape[1]
 
-    #set all founders
+    #set all founders and add them to new genotype matrix
+    gt_matrix_ctr = 0
     founderdummy_to_founder = {}
     for people in individs:
         if individs[people].is_founder():
@@ -47,12 +51,15 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
                 founderName = founders_shuffled.pop(0)
                 founder = all_founders[founderName]
                 founderdummy_to_founder[people] = founder
+                founder_genotype = founder.get_genotype(founder_genotype_phase_matrix, None)
+                GT_MATRIX.append(founder_genotype)
+                founder.gt_matrix_ctr = gt_matrix_ctr
+                gt_matrix_ctr += 1
+    GT_MATRIX = np.vstack(GT_MATRIX)
 
-    #recombine the genotypes of the founders
-    recombine_founder_genotype_phase_matrix = recombine(founder_genotype_phase_matrix, chrom_num, num_loci, num_founders)
-    founder_pairs = []
 
     #loop through dummy pairs and find all founder pairs
+    founder_pairs = []
     for pairname in dummypairs:
         pair = dummypairs[pairname]
         par1 = pair.get_pair()[0]
@@ -61,7 +68,7 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
             print("Founder pair found")
             print(pair)
             founder_pairs.append(pair)
-
+    RECOMBINED_GT_MATRIX = recombine(GT_MATRIX, chrom_num, num_loci)
 
     # loop through founder pairs
     currGen = []
@@ -73,8 +80,6 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
         f2 = founder_pair.get_pair()[1]
         founder2 = founderdummy_to_founder[f2]
         print("Marriage between %s and %s" % (founder1.get_name(), founder2.get_name()))
-        founder1.set_genotype_snps(list(recombine_founder_genotype_phase_matrix[founder1.genotype,:]))
-        founder2.set_genotype_snps(list(recombine_founder_genotype_phase_matrix[founder2.genotype,:]))
         generationLists.append(founder1)
         generationLists.append(founder2)
 
@@ -83,25 +88,20 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
         for i in range(founder_pair.get_num_children()):
             childname = founder_pair.get_children()[i]
             #no current gen genotype matrix hence the None below
-            child, child_gen = mating(childname, founder1, founder2, recombine_founder_genotype_phase_matrix, None)
-            child.set_genotype(i)
-            child.set_genotype_snps(child_gen)
-            print("Child #%s created" % (i+1))
-            currGen.append(child)
+            child, child_gen = mating(childname, founder1, founder2, RECOMBINED_GT_MATRIX)
+            #child.set_genotype_snps(child_gen)
+            print("%s created" % (child.get_name()))
             generationLists.append(child)
-            gen_genotypes.append(child_gen)
+            currGen.append(child)
+            RECOMBINED_GT_MATRIX=np.vstack((RECOMBINED_GT_MATRIX, child_gen))
+            child.gt_matrix_ctr = gt_matrix_ctr
+            gt_matrix_ctr+=1
 
-    # create new genotype phasing matrix
-    current_gen_phase_matrix = np.vstack(gen_genotypes)
-    gen_genotypes = []
-    randompersonctr = 1
+    GT_MATRIX = RECOMBINED_GT_MATRIX
 
     # loop through all remaining dummypairs
     while len(dummypairs) > 0:
 
-        # recombine and add de novo mutations
-        curr_postrecomb_matrix = recombine(current_gen_phase_matrix, chrom_num, num_loci, num_founders)
-        curr_postdenovo_matrix,sel_coeff,chrom_num= add_denovo_hms(curr_postrecomb_matrix, sel_coeff, chrom_num, num_loci)
         newGen = [] #store kids created here
 
         # loop through all children
@@ -120,32 +120,33 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
                     lp.remove(children.get_name())
                     partner = lp[0]
                     partner = founderdummy_to_founder[partner]
-                    generationLists.append(partner)
                     print("Marriage between %s and %s" % (children.get_name(), partner.get_name()))
+                    generationLists.append(partner)
                     noChildren = dummypairs[pairs].get_num_children()
                     print("They will have %s children" % noChildren)
 
+                    # Do recombination for this pair
+                    RECOMBINED_GT_MATRIX = recombine(GT_MATRIX, chrom_num, num_loci)
+                    DENOVO_GT_MATRIX,sel_coeff,chrom_num=add_denovo_hms(RECOMBINED_GT_MATRIX, sel_coeff, chrom_num, num_loci)
                     # loop through that pair's no of children
                     for i in range(noChildren):
                         childname = dummypairs[pairs].get_children()[i]
-                        child, child_gen = mating(childname, children, partner, recombine_founder_genotype_phase_matrix, curr_postdenovo_matrix)
-                        child.set_genotype(len(newGen))
-                        child.set_genotype_snps(child_gen)
-                        print("Child #%s created" % (i+1))
+                        child, child_gen = mating(childname, children, partner, DENOVO_GT_MATRIX)
+                        print("%s created" % (child.get_name()))
                         newGen.append(child)
                         generationLists.append(child)
-                        gen_genotypes.append(child_gen)
+                        DENOVO_GT_MATRIX = np.vstack((DENOVO_GT_MATRIX, child_gen))
+                        child.gt_matrix_ctr = gt_matrix_ctr
+                        gt_matrix_ctr+=1
+
                     toRemove.append(pairs)
+
+                    # reset currGen
+                    currGen = newGen
+                    GT_MATRIX = DENOVO_GT_MATRIX
 
             # remove the pairs we went through
             for k in toRemove: dummypairs.pop(k)
 
-        # reset currGen and make new matrix
-        currGen = newGen
-        current_gen_phase_matrix = np.vstack(gen_genotypes)
-
-        # reset generations' genotypes
-        gen_genotypes = []
-
     # return generation lists and new selection coefficients
-    return generationLists, sel_coeff
+    return generationLists, sel_coeff, GT_MATRIX

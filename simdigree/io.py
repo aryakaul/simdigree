@@ -45,7 +45,6 @@ def read_vcf(path, founders_desired, no_samples):
 
     founders_to_subset=npr.choice(np.arange(9,no_samples+9),size=founders_desired, replace=False)
     print("Founders will be %s" % (founders_to_subset-9))
-    #print(founders_to_subset)
     columns = [0,7]+list(founders_to_subset)
     df = pd.read_csv(path, delim_whitespace=True, header=None, comment='#', keep_default_na=False, low_memory=True, engine='c', dtype='str', usecols=columns)
 
@@ -57,21 +56,19 @@ def read_vcf(path, founders_desired, no_samples):
     # track locus id
     chrom_num = df[0].values
 
-    #generate random founders to subset
-
     # construct genotype matrix (one-hot encoding)
     genotypes = df.loc[:, founders_to_subset].T.values
-    dosage = {'0|0': 0, '0|1': 1, '1|0': 2, '1|1': 3}
-    geno_dosage = np.vectorize(dosage.get)(genotypes)
+    phase = {'0|0': 0, '0|1': 1, '1|0': 2, '1|1': 3}
+    geno_phase = np.vectorize(phase.get)(genotypes)
 
     #create dictionary with everybody 
     allpeople = {}
-    for i in range(len(geno_dosage)):
+    for i in range(len(geno_phase)):
         allpeople["i"+str(founders_to_subset[i]-9)]=Person("founder-i"+str(founders_to_subset[i]-9), i)
-        x = list(geno_dosage[i,:])
-        allpeople["i"+str(founders_to_subset[i]-9)].set_genotype_snps(x)
+        x = list(geno_phase[i,:])
+        #allpeople["i"+str(founders_to_subset[i]-9)].set_genotype_snps(x)
 
-    return geno_dosage, abs(sel_coeff), allele_freqs, chrom_num, allpeople
+    return geno_phase, abs(sel_coeff), allele_freqs, chrom_num, allpeople
 
 def read_vcf_founderliab(path):
 
@@ -80,13 +77,7 @@ def read_vcf_founderliab(path):
     """
 
     geno_dosage = allel.GenotypeArray(allel.read_vcf(path, fields=['calldata/GT'])['calldata/GT']).to_n_alt().T
-    #print(df['variants/CHROM'])
-    # construct genotype matrix (one-hot encoding)
-    #genotypes = (df.T)
-    #dosage = {'0|0': 0, '0|1': 1, '1|0': 2, '1|1': 3}
-    #geno_dosage = np.vectorize(dosage.get)(genotypes)
-    #print(geno_dosage)
-    return np.vstack(geno_dosage)
+    return geno_dosage
 
 def write_fam(listofpeople, outfile):
 
@@ -167,44 +158,19 @@ def write_effect_snps(colvec, output):
         for x in colvec:
             fi.write("%s\n" % x)
 
-def write_genotype_matrix(generations, output):
+def write_genotype_matrix(generations, GEN_DOSAGE_MATRIX, output):
 
     """
     Write the dosage matrix to a file
     """
 
-    gen_matrix = {}
-    todosage = {0:0, 1:1, 2:2, 3:2} # dictionary to convert to dosage matrix
-    for i in generations: gen_matrix[i.get_name()] = i.get_genotype_snps()
-
-    # find maximum length of snps
-    max_len = 0
-    for g in gen_matrix:
-        if len(gen_matrix[g]) > max_len: max_len = len(gen_matrix[g])
-
-    # add zeros to those snps who don't have max len
-    for g in gen_matrix:
-        diff = max_len - len(gen_matrix[g])
-        if diff < 0:
-            print("error diff = %s" % diff)
-            sys.exit(2)
-        elif diff == 0:
-            prev = gen_matrix[g]
-            new = np.vectorize(todosage.get)(prev)
-            gen_matrix[g] = new
-        else:
-            zeros = np.zeros(diff)
-            prev = gen_matrix[g]
-            new = np.append(prev, zeros)
-            newer = np.vectorize(todosage.get)(new)
-            gen_matrix[g] = newer
-
     # write the string to the file described
     with open(output, 'w') as fileout:
-        for g in gen_matrix:
+        for g in generations:
             stringToWrite = []
-            stringToWrite.append(g)
-            for j in gen_matrix[g]: stringToWrite.append(str(j))
+            stringToWrite.append(g.get_name())
+            index = g.gt_matrix_ctr
+            for i in list(GEN_DOSAGE_MATRIX[index,:]): stringToWrite.append(str(i))
             linestr = '\t'.join(stringToWrite)
             fileout.write(linestr+"\n")
 
