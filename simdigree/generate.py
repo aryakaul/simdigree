@@ -76,74 +76,76 @@ def generate_pedigree(founder_genotype_phase_matrix, reproductionRate, generatio
     Given a lot of information, generate a novel, stochastically determined pedigree.
     """
 
+    #generated pedigree genotype matrix
+    GT_MATRIX = []
+
     #this list will store the necessary information for a later FAM and PED file output
     generationLists = []
 
     #shuffle the founders for random ordering
     founders_shuffled = generate_shuffle(all_founders)
 
-    #determine some values of our vcf file
-    num_founders = len(all_founders)
-    numSNPs = founder_genotype_phase_matrix.shape[1]
+    gt_matrix_ctr = 0
 
     # Randomly determine initial founders
-    ## Ensure that we remove them from the shuffled populations
+    # Ensure that we remove them from the shuffled populations
     founder1Name = founders_shuffled.pop(0)
     founder1 = all_founders[founder1Name]
+    founder1_genotype = founder1.get_genotype(founder_genotype_phase_matrix, None)
+    GT_MATRIX.append(founder1_genotype)
+    founder1.gt_matrix_ctr = gt_matrix_ctr
+    gt_matrix_ctr += 1
     founder2Name = founders_shuffled.pop(0)
     founder2 = all_founders[founder2Name]
+    founder2_genotype = founder2.get_genotype(founder_genotype_phase_matrix, None)
+    GT_MATRIX.append(founder2_genotype)
+    founder2.gt_matrix_ctr = gt_matrix_ctr
+    gt_matrix_ctr += 1
     print("Founder1 will be %s" % (founder1))
     print("Founder2 will be %s" % (founder2))
     generationLists.append(founder1)
     generationLists.append(founder2)
+    GT_MATRIX = np.vstack(GT_MATRIX)
+    RECOMBINED_GT_MATRIX = recombine(GT_MATRIX, chrom_num, num_loci)
 
     #determine number in first round of children, make it nonzero
     noChildren = abs(generate_random_normal_INT(reproductionRate))+1
     print("They will have %s children" % noChildren)
 
-    #recombine founder genotypes, no need to add de-novo since it's the FOUNDER and they already have them
-    recombine_founder_genotype_phase_matrix = recombine(founder_genotype_phase_matrix, chrom_num, num_loci, num_founders)
-    founder1.set_genotype_snps(list(recombine_founder_genotype_phase_matrix[founder1.genotype,:]))
-    founder2.set_genotype_snps(list(recombine_founder_genotype_phase_matrix[founder2.genotype,:]))
 
     #create first generation of kiddies
     generation = "g1-i"
     currGen = []
-    gen_genotypes = []
     for i in range(noChildren):
         childname = generation + str(i)
-
-        #no current gen genotype matrix hence the None below
-        child, child_gen = mating(childname, founder1, founder2, recombine_founder_genotype_phase_matrix, None)
-        child.set_genotype(i)
-        child.set_genotype_snps(child_gen)
-        print("Child #%s created" % (i))
-        currGen.append(child)
+        child, child_gen = mating(childname, founder1, founder2, RECOMBINED_GT_MATRIX)
+        print("%s created" % (child.get_name()))
         generationLists.append(child)
-        gen_genotypes.append(child_gen)
+        currGen.append(child)
+        RECOMBINED_GT_MATRIX=np.vstack((RECOMBINED_GT_MATRIX, child_gen))
+        child.gt_matrix_ctr = gt_matrix_ctr
+        gt_matrix_ctr+=1
 
-    #this will be the ongoing matrix where we store the current generation's genotypes
-    current_gen_phase_matrix = np.vstack(gen_genotypes)
-    randompersonctr = 1 #count of individuals completely randomly generated
+    GT_MATRIX = RECOMBINED_GT_MATRIX
 
     #loop through the next generations we need to generate
-    for generations in range(2,generationNumber):
-        gen_genotypes = []
-        #generate partner and new genotype matrix of the CURRENT generation. Founder matrix stays the same
-        curr_postrecomb_matrix = recombine(current_gen_phase_matrix, chrom_num, num_loci, num_founders)
-        curr_postdenovo_matrix,sel_coeff,chrom_num= add_denovo_hms(curr_postrecomb_matrix, sel_coeff, chrom_num, num_loci)
-        newGen = [] #store kids created here
-        gen_cont = False #is this generation continuing? i.e. is the number of kids for the next gen nonzero?
-        #loop through every person in the current generation. Their index corresponds to the row of them in the genotype matrix
+    for generations in range(1,generationNumber):
+        newGen = []
+        gen_cont = False
         for eachperson in range(len(currGen)):
 
             #will they marry? / do we need them to marry to continue gen?
             if generate_marriage_choice(marriageRate) or (gen_cont==False and eachperson==len(currGen)-1):
-                randompersonctrprev = randompersonctr
-                partner, randompersonctr = generate_mate(founders_shuffled, numSNPs, randompersonctr)
-                if randompersonctr == randompersonctrprev:
-                    partner = all_founders[partner]
-                    partner.set_genotype_snps(list(recombine_founder_genotype_phase_matrix[partner.genotype,:]))
+                try:
+                    partnerName = founders_shuffled.pop(0)
+                except:
+                    print("Do not have enough founders to mate. Please run again and set a higher value for -f")
+                    sys.exit(2)
+                partner = all_founders[partnerName]
+                partner_genotype = partner.get_genotype(founder_genotype_phase_matrix, None)
+                GT_MATRIX = np.vstack((GT_MATRIX,partner_genotype))
+                partner.gt_matrix_ctr = gt_matrix_ctr
+                gt_matrix_ctr += 1
                 generationLists.append(partner)
 
                 # generate the partnership 
@@ -151,32 +153,39 @@ def generate_pedigree(founder_genotype_phase_matrix, reproductionRate, generatio
 
                 # how many children will they have?
                 noChildren = abs(generate_random_normal_INT(reproductionRate))
-                print("They will have %s children" % noChildren)
 
                 # if we need a child to sustain generation...
                 if eachperson==len(currGen)-1 and noChildren == 0 and gen_cont == False:
                     noChildren += 1
-
+                if noChildren == 0: continue
+                print("They will have %s children" % noChildren)
+                RECOMBINED_GT_MATRIX = recombine(GT_MATRIX, chrom_num, num_loci)
+                CURR_GT_MATRIX = []
                 # create each child
                 for i in range(noChildren):
                     childname = "g" + str(generations+1) + "-c"+str(len(newGen))
-                    child, child_gen = mating(childname, currGen[eachperson], partner, recombine_founder_genotype_phase_matrix, curr_postdenovo_matrix)
-                    child.set_genotype(i)
-                    child.set_genotype_snps(child_gen)
-                    print("Child #%s created" % (i+1))
+                    child, child_gen = mating(childname, currGen[eachperson], partner, RECOMBINED_GT_MATRIX)
+                    print("%s created" % (childname))
                     newGen.append(child)
-                    gen_cont = True
                     generationLists.append(child)
-                    gen_genotypes.append(child_gen)
+                    CURR_GT_MATRIX.append(child_gen)
+                    child.gt_matrix_ctr = gt_matrix_ctr
+                    gt_matrix_ctr+=1
+                    gen_cont = True
+                CURR_GT_MATRIX = np.vstack(CURR_GT_MATRIX)
+                DENOVO_CURR_GT_MATRIX,sel_coeff,chrom_num=add_denovo_hms(CURR_GT_MATRIX, sel_coeff, chrom_num, num_loci)
+
+                numdenovo = DENOVO_CURR_GT_MATRIX.shape[1]-RECOMBINED_GT_MATRIX.shape[1]
+                if numdenovo != 0:
+                    zero_col = np.zeros((RECOMBINED_GT_MATRIX.shape[0], numdenovo))
+                    RECOMBINED_GT_MATRIX = np.hstack((RECOMBINED_GT_MATRIX, zero_col))
+                RECOMBINED_GT_MATRIX = np.vstack((RECOMBINED_GT_MATRIX, DENOVO_CURR_GT_MATRIX))
+                GT_MATRIX = RECOMBINED_GT_MATRIX
 
         # overwrite the new current generation
         currGen = newGen
 
-        # create new genotype matrix
-        current_gen_phase_matrix = np.vstack(gen_genotypes)
-
-    # return the new selection coefficiencts and the generation list
-    return generationLists, sel_coeff
+    return generationLists, sel_coeff, GT_MATRIX
 
 def main():
     return None

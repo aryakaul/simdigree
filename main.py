@@ -31,7 +31,7 @@ def parser_args(args):
     parser_generate.add_argument('-i', '--inputvcf', help="Path to the vcf file being used", type=str, required=True)
     parser_generate.add_argument('-T', '--noLoci', help="Number of loci being used", type=int, required=True)
     parser_generate.add_argument('-n', '--nosamples', help="Number of individuals in vcf being used", type=int, required=True)
-    parser_generate.add_argument('-f', '--founders', help="Number of founders matrix should be subsetted to. Default is 15", type=int, required=False, default=15)
+    parser_generate.add_argument('-f', '--founders', help="Number of founders matrix should be subsetted to. Default is 15", type=int, required=False, default=40)
     parser_generate.add_argument('-t', '--tau', help="Tau value to use for effect calculation. Default is 0.5", type=float, required=False, nargs='*')
     parser_generate.add_argument('-l', '--liabilityThreshold', help="Float value(s) representing the liability threshold percentage(s) being used. Default is 0.01", type=float, required=False, nargs = '*')
     parser_generate.add_argument('-g', '--generation', help="How many generations will be created total?", type=int, required=False, default=4)
@@ -111,7 +111,7 @@ def main():
 
         #generate the novel pedigree, check generate.py for more details
         start = time.time()
-        generations, selection_coeff_new = generate_pedigree(founder_genotype_phase_matrix, args.reproduction, args.generation, args.marriagerate, all_founders, chrom_num, args.noLoci, selection_coeff)
+        generations, selection_coeff_new, GT_MATRIX = generate_pedigree(founder_genotype_phase_matrix, args.reproduction, args.generation, args.marriagerate, all_founders, chrom_num, args.noLoci, selection_coeff)
         end = time.time()
         print("Time took to generate pedigree: %s" % (end-start))
 

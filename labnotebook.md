@@ -174,3 +174,6 @@ Think the problem has been identified? It is probably because I'm calculating th
 
 ##### 2018-08-01
 I FOUND THE BUG. IT WAS UNBELIEVABLY STUPID. I'M NOT EVEN GOING TO DIGNIFY IT WITH A DESCRIPTION HERE. I WASTED LIKE 3 DAYS FIGURING THIS OUT. WHAT IS LIFE
+
+##### 2018-08-03
+Fixed up the generate function to adopt the new policies made post bug. Everything is looking good. If I don't end up adding the other functionality to simdigree, I think I can use the simulations made to do some cool tests.

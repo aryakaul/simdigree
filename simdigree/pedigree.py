@@ -39,8 +39,6 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
 
     #shuffle the founders so random
     founders_shuffled = generate_shuffle(all_founders)
-    num_founders = len(all_founders)
-    numSNPs = founder_genotype_phase_matrix.shape[1]
 
     #set all founders and add them to new genotype matrix
     gt_matrix_ctr = 0
@@ -72,7 +70,6 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
 
     # loop through founder pairs
     currGen = []
-    gen_genotypes = []
     for founder_pair in founder_pairs:
         dummypairs.pop(founder_pair.get_pair())
         f1 = founder_pair.get_pair()[0]
@@ -87,9 +84,7 @@ def recreate_pedigree(individs, dummypairs, all_founders, founder_genotype_phase
         print("They will have %s children" % founder_pair.get_num_children())
         for i in range(founder_pair.get_num_children()):
             childname = founder_pair.get_children()[i]
-            #no current gen genotype matrix hence the None below
             child, child_gen = mating(childname, founder1, founder2, RECOMBINED_GT_MATRIX)
-            #child.set_genotype_snps(child_gen)
             print("%s created" % (child.get_name()))
             generationLists.append(child)
             currGen.append(child)
