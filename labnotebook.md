@@ -177,3 +177,9 @@ I FOUND THE BUG. IT WAS UNBELIEVABLY STUPID. I'M NOT EVEN GOING TO DIGNIFY IT WI
 
 ##### 2018-08-03
 Fixed up the generate function to adopt the new policies made post bug. Everything is looking good. If I don't end up adding the other functionality to simdigree, I think I can use the simulations made to do some cool tests.
+
+##### 2018-08-07
+Made the first test of penetrance/prevalence. Submitting 1,000 simulations now
+
+##### 2018-08-10
+Got some results. Gotta think about how to count and understand informative meiosis events.

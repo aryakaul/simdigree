@@ -143,7 +143,11 @@ def generate_pedigree(founder_genotype_phase_matrix, reproductionRate, generatio
                     sys.exit(2)
                 partner = all_founders[partnerName]
                 partner_genotype = partner.get_genotype(founder_genotype_phase_matrix, None)
-                GT_MATRIX = np.vstack((GT_MATRIX,partner_genotype))
+                numdenovo = GT_MATRIX.shape[1]-len(partner_genotype)
+                if numdenovo != 0:
+                    for i in range(numdenovo):
+                        partner_genotype.append(0)
+                GT_MATRIX = np.vstack((GT_MATRIX, partner_genotype))
                 partner.gt_matrix_ctr = gt_matrix_ctr
                 gt_matrix_ctr += 1
                 generationLists.append(partner)

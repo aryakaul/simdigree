@@ -31,7 +31,7 @@ def parser_args(args):
     parser_generate.add_argument('-i', '--inputvcf', help="Path to the vcf file being used", type=str, required=True)
     parser_generate.add_argument('-T', '--noLoci', help="Number of loci being used", type=int, required=True)
     parser_generate.add_argument('-n', '--nosamples', help="Number of individuals in vcf being used", type=int, required=True)
-    parser_generate.add_argument('-f', '--founders', help="Number of founders matrix should be subsetted to. Default is 15", type=int, required=False, default=40)
+    parser_generate.add_argument('-f', '--founders', help="Number of founders matrix should be subsetted to. Default is 40", type=int, required=False, default=40)
     parser_generate.add_argument('-t', '--tau', help="Tau value to use for effect calculation. Default is 0.5", type=float, required=False, nargs='*')
     parser_generate.add_argument('-l', '--liabilityThreshold', help="Float value(s) representing the liability threshold percentage(s) being used. Default is 0.01", type=float, required=False, nargs = '*')
     parser_generate.add_argument('-g', '--generation', help="How many generations will be created total?", type=int, required=False, default=4)
@@ -80,6 +80,29 @@ def calculate_liability(X, s, C, tau, h2=0.5):
     G = G.reshape(len(G))
     E = np.sqrt(1. - h2) * np.random.randn(len(G))
     return G + E, b
+
+def calculate_probability_mendelian(threshold, component_effects_people, outliers, output, samplesize):
+
+    """
+    Swap out the beta max of each affected individual in pedigree OR in founder population for everyone's
+    beta max then compute PREVALENCE/PENETRANCE. Dump to output file
+    """
+
+    SWAPPED_GT_EFFECTS = []
+    sums = np.sum(component_effects_people,1)
+    oldmaxes = np.max(component_effects_people,1)
+    sub = sums-oldmaxes
+    for afflicted in outliers:
+        toaddmax = np.max(component_effects_people[afflicted])
+        SWAPPED_GT_EFFECTS.append(sub + toaddmax)
+    prevalence = len(outliers) / samplesize
+    with open(output, 'w') as out:
+        for i in SWAPPED_GT_EFFECTS:
+            new_outliers = np.argwhere(i > threshold)
+            penetrance = len(new_outliers) / samplesize
+            prob_mendel = float(penetrance/prevalence)
+            out.write("%s\n" % prob_mendel)
+
 
 def main():
     args = parser_args(sys.argv[1:])
@@ -196,6 +219,15 @@ def main():
         # write the column vector describing the effects of each SNP
         write_effect_snps(EFFECTS_SNPS_GEN, os.path.join(taupath, "simdigree_out-effects_snps"))
 
+        # dankmemes
+        numpedigree = GEN_DOSAGE_MATRIX.shape[0]
+        tiled_effects = np.tile(EFFECTS_SNPS_GEN.transpose(), (numpedigree, 1))
+        pedigree_component_effects = GEN_DOSAGE_MATRIX*tiled_effects
+
+        numfounders = founder_dosage.shape[0]
+        tiled_effects = np.tile(effects_snps.transpose(), (numfounders, 1))
+        founder_component_effects = founder_dosage*tiled_effects
+
         # loop through every given liability threshold
         print("Looping through all liability thresholds")
         for tidx in range(len(lT)):
@@ -213,6 +245,7 @@ def main():
             OUTLIERS = np.argwhere(EFFECTS_GEN > founder_derived_threshold)
             print("Number of affected in pedigree is %s out of %s" % (len(OUTLIERS), len(EFFECTS_GEN)))
 
+
             for person in generations:
                 index = person.gt_matrix_ctr
                 if index not in OUTLIERS: person.set_affected(False)
@@ -223,6 +256,18 @@ def main():
             # write the fam file with information about the affected status of all the individuals
             write_fam(generations, os.path.join(outputpath, "simdigree_out-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".fam"))
 
+            # swap beta max to calculate mendeliannness
+            if len(OUTLIERS) != 0:
+                mendelout = os.path.join(outputpath, "simdigree_out-simulatedpedigree_mendelianness-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".txt")
+                start = time.time()
+                calculate_probability_mendelian(founder_derived_threshold, pedigree_component_effects, OUTLIERS, mendelout, numpedigree)
+                end = time.time()
+                print("Swapped beta max for pedigree simulations. Time took %s" % (end-start))
+            start = time.time()
+            mendelout = os.path.join(outputpath, "simdigree_out-founder_mendelianness-liabThreshold-"+str(lT[tidx])+"-tau-"+str(tauValue)+".txt")
+            calculate_probability_mendelian(founder_derived_threshold, founder_component_effects, founder_outliers[tidx], mendelout, numfounders)
+            end = time.time()
+            print("Swapped beta max for founder population, Time took %s" % (end-start))
         endbig = time.time()
         print("Time to calculate given tau value was: %s" % (endbig-startbig))
 
